@@ -16,14 +16,32 @@ int execute(vector <unsigned char> &instructions, unsigned char (&data)[DATA_SIZ
 	//check if R type
 	if (opcode == 0)
 		//execute
-		execute_R(instr, data, registers);
+		return execute_R(instr, data, registers);
 	//check if J type
 	else if (opcode == 2 || opcode == 3){
 		//execute
-		execute_J(instr, data, registers, opcode, pc);
+		return execute_J(instr, data, registers, opcode, pc);
 	}
 	//further decode and (eventually) execute
-	else execute_I(instr, data, registers, opcode);
+	else return execute_I(instr, data, registers, opcode);
+}
+
+int execute_R(---){
+	//decode relevant operation from function code(LS 5 bits)
+	int funct_code = (instr << 26) >> 26;
+		//filter funct 0x0_
+	if (funct_code < 0x10){
+
+	}
+		//filter funct 0x1_
+	else if (funct_code < 0x20){
+
+	}
+		//filter funct 0x2_
+	else{
+		
+	}
+
 }
 
 
