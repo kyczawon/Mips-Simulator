@@ -1,17 +1,24 @@
 #include <cstdlib>
 #include <fstream>
+#include <vector>
+//#include <cstdint>
 #include "constants.hpp"
 // #include "functions.hpp"
 using namespace std;
 
 int main(int argc, char* argv[])
 {
-	//initialize RAM and Register File
-	unsigned char mem[RAM_SIZE] = {0};
-	int reg[32] = {0};
+	//initialize memory space
+		//instruction memory as vector
+	vector<unsigned char> instructions;
+		//registers file as array
+	int registers[32] = {0};
+		//data space as array
+	unsigned char data[DATA_SIZE] = {0}; 
+
 
 	//global variables
-	unsigned int pc = ADDR_INSTR;
+	unsigned int pc = 0;
 
 
 	//open Binary file
@@ -29,16 +36,17 @@ int main(int argc, char* argv[])
 	int offset = ADDR_INSTR;
 	while (infile >> x) {
 		for (int i = 0; i <=24; i+=8) {
-			mem[offset++] = x >> i;
+			instructions.push_back(x >> i);
 		}
 	}
 
 	//execute instructions
-	while (mem[pc] != 0){
-		//check if ret_value is ok
-		// if (execute(mem, pc)) {
-		// 	//deal with exit code
-		// }
+	while (pc < instructions.size()){
+	//execute and check if ret_value is ok
+		if (execute(instructions, data, registers, pc)) {
+			//deal with exit code
+		}
+
 	}
 
   exit(-10);
