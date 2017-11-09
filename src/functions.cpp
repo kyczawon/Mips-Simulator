@@ -2,12 +2,32 @@
 #include "constants.hpp"
 using namespace std;
 
-
-unsigned int read_u(unsigned int address, unsigned char (&data)[DATA_SIZE], int (&registers)[32]){
-	if (address )
+unsigned int read_byte(unsigned int address, unsigned char (&data)[DATA_SIZE]){
+	return data[address - ADDR_DATA];
 }
 
-int read_s(unsigned int address, unsigned char (&data)[DATA_SIZE], int (&registers)[32]){
+int read_mem_s(unsigned int address, unsigned char (&mem)){
+	//read only if address is valid
+	if (address % 4 == 0){
+		//check if mem to be accessed is between correct bounds for data space
+		if (address >= 0x20000000 && address < 0x24000000){
+			//remove data offset and read
+
+		}
+		//else check if instruction is trying to read ADDR_GETC location
+		else if (address == 0x30000000){
+			//read from keyboard
+			//
+			//---TO DO---
+			//
+		}
+	}
+	//otherwise return error code
+	else exit(-11);
+}
+
+
+int read_reg(unsigned int address, int (&registers)[32]){
 	
 }
 
