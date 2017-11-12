@@ -152,6 +152,91 @@ void execute_R(unsigned int instr, unsigned char* data, int (&registers)[32]) {
 	}
 }
 
+void execute_I (unsigned int instr, unsigned int  (&data)[DATA_SIZE], int (&registers)[32], unsigned char &opcode){
+	int dest_reg, src_reg, immediate;
+	decode_fields_I(dest_reg, src_reg, immediate, instr);
+
+
+	//filter 0x0_
+	if (opcode < 0x10){
+		switch(opcode){
+			//CORNER CASE --> DOUBLE POSSIBILITY
+			case 1: {
+				//bgez 	rs, label 		000001
+				if (dest_reg == 1) bgez (---);
+				//bltz 	rs, label 		000001 		
+				else bltz(---);
+			}
+
+			//beq 	rs, rt, label 	000100 
+			case 4: beq(---);
+			//bne 	rs, rt, label 	000101
+			case 5: bne(---);
+			//blez 	rs, label 		000110 
+			case 6: blez(---);
+			//bgtz 	rs, label 		000111
+			case 7: bgtz(---); 
+			//addi 	rt, rs, imm 	001000 
+			case 8: addi(---);
+			//addiu rt, rs, imm 	001001
+			case 9: addiu(---); 
+			//slti 	rt, rs, imm 	001010 
+			case 10: slti(---);
+			//sltiu rt, rs, imm 	001011
+			case 11: sltiu(---); 
+			//andi 	rt, rs, imm 	001100
+			case 12: andi(---); 
+			//ori 	rt, rs, imm 	001101
+			case 13: ori(---); 
+			//xori 	rt, rs, imm 	001110 
+			case 14: xori(---);
+			//lui 	rt, imm 		001111
+			case 15: lui(---); 
+		}
+	}
+
+	//filter 0x1_
+	if else (opcode < 0x20){
+		switch(opcode){
+			//lb 	rt, imm(rs) 	100000
+			case 32: lb(---); 
+			//lh 	rt, imm(rs) 	100001
+			case 33: lh(---); 
+			//lw 	rt, imm(rs) 	100011
+			case 35: lw(---); 
+			//lbu 	rt, imm(rs) 	100100
+			case 36: lbu(---); 
+			//lhu 	rt, imm(rs) 	100101 
+			case 37: lhu(---);
+			//sb 	rt, imm(rs) 	101000
+			case 40: sb(---); 
+			//sh 	rt, imm(rs) 	101001
+			case 41: sh(---); 
+			//sw 	rt, imm(rs) 	101011
+			case 43: sw(---);
+		}
+	}
+
+	//filter 0x2_
+	else{
+		switch(opcode){
+			//lwc1 	rt, imm(rs) 	110001 
+			case 49: lwc1(---);
+			//swc1	rt, imm(rs) 	111001 
+			case 57: swc1(---);
+		}
+	}	
+
+}
+
+void decode_fields_I (int &dest_reg, int &src_reg, int& immediate, const int &instruction){
+	dest_reg = (instruction << 11) >> 27;
+	src_reg = (instruction << 6) >> 27;
+	//for the immediate(16 bits long) sign extension is necessary
+	immediate = instruction << 16;
+	if (immediate >= 0) immediate = immediate >> 16;
+	else immediate = (immediate >> 16) | 0xFFFF0000;
+}
 void decode_fields_R (int &dest_reg, int &op1, int &op2, int &shift_amt, int &funct_code, const int &instr){
 	dest_reg = (instr << 16) >> 27;
 	op1 = (instr << 6) >> 27;
@@ -169,4 +254,14 @@ void add(int dest_reg, int op1, int op2, int (&registers)[32]){
 	int sum2 = source1 + source2;
 	if (sum != sum2) exit(-10);
 	else registers[dest_reg] =  sum2;
+}
+
+
+
+void addi(int &dest_reg, int &src_reg, int &immediate, int (&registers)[32]){
+	int source = registers[src_reg];
+	long sum = source + immediate;
+	int sum2 = source + immediate;
+	if (sum != sum2) exit(-10);
+	else registers[dest_reg] = sum2;
 }
