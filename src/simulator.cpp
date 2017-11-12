@@ -3,7 +3,7 @@
 #include <vector>
 //#include <cstdint>
 #include "constants.hpp"
-// #include "functions.hpp"
+#include "functions.hpp"
 using namespace std;
 
 int main(int argc, char* argv[])
