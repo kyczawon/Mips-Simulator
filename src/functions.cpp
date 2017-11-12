@@ -3,14 +3,28 @@
 using namespace std;
 
 unsigned int read_byte(unsigned int address, unsigned char (&data)[DATA_SIZE]){
-	return data[address - ADDR_DATA];
+	//check if mem to be accessed is between correct bounds for data space
+		if (address >= ADDR_DATA && address < ADDR_DATA + DATA_SIZE){
+			//remove data offset and read
+			return data[address - ADDR_DATA];
+		}
+		//else check if instruction is trying to read ADDR_GETC location
+		else if (address == 0x30000000){
+			//read from keyboard
+			//
+			//---TO DO---
+			//
+		}
+	}
+	//otherwise return error code
+	else exit(-11);
 }
 
 int read_mem_s(unsigned int address, unsigned char (&mem)){
 	//read only if address is valid
 	if (address % 4 == 0){
 		//check if mem to be accessed is between correct bounds for data space
-		if (address >= 0x20000000 && address < 0x24000000){
+		if (address >= ADDR_DATA && address < ADDR_DATA + DATA_SIZE){
 			//remove data offset and read
 
 		}
@@ -31,7 +45,7 @@ int read_reg(unsigned int address, int (&registers)[32]){
 	
 }
 
-int execute(vector <unsigned char> &instructions, unsigned char (&data)[DATA_SIZE], int (&registers)[32] , int& pc) {
+void execute(vector <unsigned char> &instructions, unsigned char (&data)[DATA_SIZE], int (&registers)[32] , int& pc) {
 
 	//get instruction from 4 bytes in mem
 	unsigned int instr = instructions[pc];
@@ -46,26 +60,26 @@ int execute(vector <unsigned char> &instructions, unsigned char (&data)[DATA_SIZ
 	//check if R type
 	if (opcode == 0)
 		//execute
-		return execute_R(instr, data, registers);
+		execute_R(instr, data, registers);
 	//check if J type
 	else if (opcode == 2 || opcode == 3){
 		//execute
-		return execute_J(instr, data, registers, opcode, pc);
+		execute_J(instr, data, registers, opcode, pc);
 	}
 	//further decode and (eventually) execute
-	else return execute_I(instr, data, registers, opcode);
+	else execute_I(instr, data, registers, opcode);
 }
 
 
-int execute_R(---){
+void execute_R(---){
 	//decode relevant operation from function code(LS 5 bits)
 	int funct_code = (instr << 26) >> 26;
 		//filter funct 0x0_
 	if (funct_code < 0x10){
 		//sll 	rd, rt, sa 	000000
-		if (funct_code == 0) return sll(---);
+		if (funct_code == 0) sll(---);
 		//srl 	rd, rt, sa 	000010
-		else if (funct_code == 2) return srl(---);
+		else if (funct_code == 2) srl(---);
 		//sra 	rd, rt, sa 	000011
 		else if (funct_code == 3) return sra(---);
 		//sllv 	rd, rt, rs 	000100
@@ -137,6 +151,22 @@ int execute_R(---){
 
 }
 
+void decode_fields_R (int &dest_reg, int &op1, int &op2, int &shift_amt, int &funct_code, const int &instruction){
+	dest_reg = (instruction << 16) >> 27;
+	op1 = (instruction << 6) >> 27;
+	op2 = (instruction << 11) >> 27;
+	shift_amt = (instruction << 21) >> 27;
+	funct_code = (instr << 26) >> 26;
 
+}
 
+void add(int dest_reg, op1, op2, int (&registers)[32]){
+	int source1 = registers[op1];
+	int source2 = registers[op2];
+	long sum = source1 + source2;
+	//check for signed/unsigned overflow
+	int sum2 = source1 + source2;
+	if (sum != sum2) exit(-10);
+	else registers[dest_reg] =  sum2;
+}
 
