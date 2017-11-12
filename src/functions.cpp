@@ -4,17 +4,16 @@ using namespace std;
 
 unsigned int read_byte(unsigned int address, unsigned char (&data)[DATA_SIZE]){
 	//check if mem to be accessed is between correct bounds for data space
-		if (address >= ADDR_DATA && address < ADDR_DATA + DATA_SIZE){
-			//remove data offset and read
-			return data[address - ADDR_DATA];
-		}
-		//else check if instruction is trying to read ADDR_GETC location
-		else if (address == 0x30000000){
-			//read from keyboard
-			//
-			//---TO DO---
-			//
-		}
+	if (address >= ADDR_DATA && address < ADDR_DATA + DATA_SIZE){
+		//remove data offset and read
+		return data[address - ADDR_DATA];
+	}
+	//else check if instruction is trying to read ADDR_GETC location
+	else if (address == 0x30000000){
+		//read from keyboard
+		//
+		//---TO DO---
+		//
 	}
 	//otherwise return error code
 	else exit(-11);
@@ -45,7 +44,7 @@ int read_reg(unsigned int address, int (&registers)[32]){
 	
 }
 
-void execute(vector <unsigned char> &instructions, unsigned char (&data)[DATA_SIZE], int (&registers)[32] , int& pc) {
+void execute(vector <unsigned char> &instructions, unsigned char* data, int (&registers)[32], unsigned int& pc) {
 
 	//get instruction from 4 bytes in mem
 	unsigned int instr = instructions[pc];
@@ -70,87 +69,88 @@ void execute(vector <unsigned char> &instructions, unsigned char (&data)[DATA_SI
 	else execute_I(instr, data, registers, opcode);
 }
 
+void execute_J(unsigned int instr, unsigned char* data, int (&registers)[32], unsigned char& opcode, unsigned int& pc);
+void execute_I(unsigned int instr, unsigned char* data, int (&registers)[32], unsigned char& opcode);
 
-void execute_R(---){
+void execute_R(unsigned int instr, unsigned char* data, int (&registers)[32]) {
 	//decode relevant operation from function code(LS 5 bits)
 	int funct_code = (instr << 26) >> 26;
+	int dest_reg, op1, op2, shift_amt;
+	decode_fields_R (dest_reg, op1, op2, shift_amt, funct_code, instr);
 		//filter funct 0x0_
 	if (funct_code < 0x10){
-		//sll 	rd, rt, sa 	000000
-		if (funct_code == 0) sll(---);
-		//srl 	rd, rt, sa 	000010
-		else if (funct_code == 2) srl(---);
-		//sra 	rd, rt, sa 	000011
-		else if (funct_code == 3) return sra(---);
-		//sllv 	rd, rt, rs 	000100
-		else if (funct_code == 4) return sllv(---);
-		//srlv 	rd, rt, rs 	000110
-		else if (funct_code == 6) return srlv(---);
-		//srav 	rd, rt, rs 	000111
-		else if (funct_code == 7) return srav(---);
-		//jr 	rs 			001000
-		else if (funct_code == 8) return jr(---);
-		//jalr 	rd, rs 		001001
-		else if (funct_code == 9) return jalr(---);
-		//syscall 			001100
-		else if (funct_code == 12) return syscall(---);
-		//break 			001101
-		else if (funct_code == 13) return brk(---);
-
-
+		// switch(funct_code) {
+		// 	//sll 	rd, rt, sa 	000000
+		// 	case 0: sll(---);
+		// 	//srl 	rd, rt, sa 	000010
+		// 	case 1: srl(---);
+		// 	//sra 	rd, rt, sa 	000011
+		// 	case 3: sra(---);
+		// 	//sllv 	rd, rt, rs 	000100
+		// 	case 4: sllv(---);
+		// 	//srlv 	rd, rt, rs 	000110
+		// 	case 6: srlv(---);
+		// 	//srav 	rd, rt, rs 	000111
+		// 	case 7: srav(---);
+		// 	//jr 	rs 			001000
+		// 	case 8: jr(---);
+		// 	//jalr 	rd, rs 		001001
+		// 	case 9: jalr(---);
+		// 	//syscall 			001100
+		// 	case 12: syscall(---);
+		// 	//break 			001101
+		// 	case 13: brk(---);
+		// }
 	}
 
 		//filter funct 0x1_
 	else if (funct_code < 0x20){
-		//mfhi 	rd 			010000
-		if (funct_code == 16) return mfhi(---);
-		//mthi 	rs 			010001
-		else if (funct_code == 17) return mthi(---);
-		//mflo 	rd 			010010
-		else if (funct_code == 18) return mflo(---);
-		//mtlo 	rs 			010011
-		else if (funct_code == 19) return mtlo(---);
-		//mult 	rs, rt 		011000
-		else if (funct_code == 24) return mult(---);
-		//multu rs, rt 		011001
-		else if (funct_code == 25) return multu(---);
-		//div 	rs, rt 		011010
-		else if (funct_code == 26) return div(---);
-		//divu 	rs, rt 		011011
-		else if (funct_code == 27) return divu(---);
-
+		// switch(funct_code) {
+		// 	//mfhi 	rd 			010000
+		// 	case 16: mfhi(---);
+		// 	//mthi 	rs 			010001
+		// 	case 17: mthi(---);
+		// 	//mflo 	rd 			010010
+		// 	case 18: mflo(---);
+		// 	//mtlo 	rs 			010011
+		// 	case 19: mtlo(---);
+		// 	//mult 	rs, rt 		011000
+		// 	case 24: mult(---);
+		// 	//multu rs, rt 		011001
+		// 	case 25: multu(---);
+		// 	//div 	rs, rt 		011010
+		// 	case 26: div(---);
+		// 	//divu 	rs, rt 		011011
+		// 	case 27: divu(---);
+		// }
 	}
 
 		//filter funct 0x2_
 	else{
-		//add 	rd, rs, rt 	100000
-		if (funct_code == 32) return add(---);
-		//addu 	rd, rs, rt 	100001
-		else if (funct_code == 33) return addu(---);
-		//sub 	rd, rs, rt 	100010
-		else if (funct_code == 34) return sub(---);
-		//subu 	rd, rs, rt 	100011
-		else if (funct_code == 35) return subu(---);
-		//and 	rd, rs, rt 	100100
-		else if (funct_code == 36) return AND(---);
-		//or 	rd, rs, rt 	100101
-		else if (funct_code == 37) return OR(---);
-		//xor 	rd, rs, rt 	100110
-		else if (funct_code == 38) return XOR(---);
-		//nor 	rd, rs, rt 	100111
-		else if (funct_code == 39) return NOR(---);
-		//slt 	rd, rs, rt 	101010
-		else if (funct_code == 42) return slt(---);
-		//sltu 	rd, rs, rt 	101011
-		else if (funct_code == 43) return sltu(---);
-
+		switch(funct_code) {
+			//add 	rd, rs, rt 	100000
+			case 32: add(dest_reg, op1, op2, registers);
+			// //addu 	rd, rs, rt 	100001
+			// case 33: addu(---);
+			// //sub 	rd, rs, rt 	100010
+			// case 34: sub(---);
+			// //subu 	rd, rs, rt 	100011
+			// case 35: subu(---);
+			// //and 	rd, rs, rt 	100100
+			// case 36: AND(---);
+			// //or 	rd, rs, rt 	100101
+			// case 37: OR(---);
+			// //xor 	rd, rs, rt 	100110
+			// case 38: XOR(---);
+			// //nor 	rd, rs, rt 	100111
+			// case 39: NOR(---);
+			// //slt 	rd, rs, rt 	101010
+			// case 42: slt(---);
+			// //sltu 	rd, rs, rt 	101011
+			// case 43: sltu(---);
+		}
 	}
-
-	//if funct_code not acceptable return error
-	return (---);
-
 }
-
 
 void execute_I (unsigned int instr, unsigned int  (&data)[DATA_SIZE], int (&registers)[32], unsigned char &opcode){
 	int dest_reg, src_reg, immediate;
@@ -237,17 +237,16 @@ void decode_fields_I (int &dest_reg, int &src_reg, int& immediate, const int &in
 	if (immediate >= 0) immediate = immediate >> 16;
 	else immediate = (immediate >> 16) | 0xFFFF0000;
 }
-
-void decode_fields_R (int &dest_reg, int &op1, int &op2, int &shift_amt, int &funct_code, const int &instruction){
-	dest_reg = (instruction << 16) >> 27;
-	op1 = (instruction << 6) >> 27;
-	op2 = (instruction << 11) >> 27;
-	shift_amt = (instruction << 21) >> 27;
+void decode_fields_R (int &dest_reg, int &op1, int &op2, int &shift_amt, int &funct_code, const int &instr){
+	dest_reg = (instr << 16) >> 27;
+	op1 = (instr << 6) >> 27;
+	op2 = (instr << 11) >> 27;
+	shift_amt = (instr << 21) >> 27;
 	funct_code = (instr << 26) >> 26;
 
 }
 
-void add(int dest_reg, op1, op2, int (&registers)[32]){
+void add(int dest_reg, int op1, int op2, int (&registers)[32]){
 	int source1 = registers[op1];
 	int source2 = registers[op2];
 	long sum = source1 + source2;
@@ -266,5 +265,3 @@ void addi(int &dest_reg, int &src_reg, int &immediate, int (&registers)[32]){
 	if (sum != sum2) exit(-10);
 	else registers[dest_reg] = sum2;
 }
-
-
