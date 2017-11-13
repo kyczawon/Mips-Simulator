@@ -7,7 +7,9 @@ void execute_I(uint32_t instr, uint8_t* data, int32_t (&registers)[32], uint8_t&
 void decode_fields_R (uint32_t &dest_reg, uint32_t &op1, uint32_t &op2, uint32_t &shift_amt, uint32_t &funct_code, const uint32_t &instr);
 void decode_fields_I (int32_t &dest_reg, int32_t &src_reg, int32_t& immediate, const int32_t &instruction);
 //R type instructions
+void jr(uint32_t src_reg, int32_t (&registers)[32], uint32_t& pc);
 void add(uint32_t dest_reg, uint32_t op1, uint32_t op2, int32_t (&registers)[32]);
+void sll(uint32_t dest_reg, uint32_t op, uint32_t shift_amt, int32_t (&registers)[32]);
 
 //I type instructions
 void addi(int32_t &dest_reg, int32_t &src_reg, int32_t &immediate, int32_t (&registers)[32]);
