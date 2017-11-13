@@ -7,22 +7,22 @@
 #include "constants.hpp"
 #include "functions.hpp"
 
-int main(int argc, char* argv[])
+int32_t main(int32_t argc, int8_t* argv[])
 {
 	//initialize memory space
 		//instruction memory as vector
-	vector<unsigned int> instructions;
+	vector<uint32_t> instructions;
 		//registers file as array
-	int registers[32] = {0};
+	int32_t registers[32] = {0};
 		//data space as array
-	unsigned char* data = new unsigned char[DATA_SIZE];
+	uint8_t* data = new uint8_t[DATA_SIZE];
 
-	 for (unsigned int i = 0; i < DATA_SIZE; i++) {
+	 for (uint32_t i = 0; i < DATA_SIZE; i++) {
 		data[i] = 0;
 	 }
 
 	//global variables
-	unsigned int pc = 0;
+	uint32_t pc = 0;
 
 	//open Binary file
 	ifstream infile;
@@ -36,15 +36,15 @@ int main(int argc, char* argv[])
 	//load instructions from Binary file into correct location in RAM 
 	//each instruction is loaded into 4 separate bytes
 	string input;
-	int offset = ADDR_INSTR;
+	int32_t offset = ADDR_INSTR;
 	while (infile >> input) {
-		unsigned int x = bin_string_to_int(input);
+		uint32_t x = bin_string_to_int(input);
 		instructions.push_back(x);
 	}
 
 	//execute instructions
 	while (pc < instructions.size()){
-		unsigned int instr = instructions[pc];
+		uint32_t instr = instructions[pc];
 		execute(instr, data, registers, pc);
 		pc+=1;
 	}
@@ -52,9 +52,9 @@ int main(int argc, char* argv[])
   exit(-10);
 }
 
-unsigned int bin_string_to_int(string input) {
-	unsigned int x = 0;
-	for (unsigned int i = 0; i < 32; i++) {
+uint32_t bin_string_to_int(string input) {
+	uint32_t x = 0;
+	for (uint32_t i = 0; i < 32; i++) {
 		if (input[i] == '1'){
 			x += pow (2, 31-i);
 		}
@@ -62,7 +62,7 @@ unsigned int bin_string_to_int(string input) {
 	return x;
 }
 
-unsigned int read_byte(unsigned int address, unsigned char (&data)[DATA_SIZE]){
+uint32_t read_byte(uint32_t address, uint8_t (&data)[DATA_SIZE]){
 	//check if mem to be accessed is between correct bounds for data space
 	if (address >= ADDR_DATA && address < ADDR_DATA + DATA_SIZE){
 		//remove data offset and read
@@ -80,7 +80,7 @@ unsigned int read_byte(unsigned int address, unsigned char (&data)[DATA_SIZE]){
 	else exit(-11);
 }
 
-int read_mem_s(unsigned int address, unsigned char (&mem)){
+int32_t read_mem_s(uint32_t address, uint8_t (&mem)){
 	//read only if address is valid
 	if (address % 4 == 0){
 		//check if mem to be accessed is between correct bounds for data space
@@ -102,15 +102,15 @@ int read_mem_s(unsigned int address, unsigned char (&mem)){
 	return 0;
 }
 
-int read_reg(unsigned int address, int (&registers)[32]){
+int32_t read_reg(uint32_t address, int32_t (&registers)[32]){
 	return 0;
 }
 
-void execute(unsigned int instr, unsigned char* data, int (&registers)[32], unsigned int& pc) {
+void execute(uint32_t instr, uint8_t* data, int32_t (&registers)[32], uint32_t& pc) {
 	cout << "enter execute" << endl;
 	//decode instruction and call correct subfunction
 	//isolate opcode
-	unsigned char opcode = instr >> 26;
+	uint8_t opcode = instr >> 26;
 	//check if R type
 	if (opcode == 0) {
 		//execute
@@ -125,16 +125,16 @@ void execute(unsigned int instr, unsigned char* data, int (&registers)[32], unsi
 	else execute_I(instr, data, registers, opcode);
 }
 
-void execute_J(unsigned int instr, unsigned char* data, int (&registers)[32], unsigned char& opcode, unsigned int& pc) {
+void execute_J(uint32_t instr, uint8_t* data, int32_t (&registers)[32], uint8_t& opcode, uint32_t& pc) {
 }
-void execute_I(unsigned int instr, unsigned char* data, int (&registers)[32], unsigned char& opcode) {
+void execute_I(uint32_t instr, uint8_t* data, int32_t (&registers)[32], uint8_t& opcode) {
 
 }
 
-void execute_R(unsigned int instr, unsigned char* data, int (&registers)[32]) {
+void execute_R(uint32_t instr, uint8_t* data, int32_t (&registers)[32]) {
 	//decode relevant operation from function code(LS 5 bits)
-	unsigned int funct_code = (instr << 26) >> 26;
-	unsigned int dest_reg, op1, op2, shift_amt;
+	uint32_t funct_code = (instr << 26) >> 26;
+	uint32_t dest_reg, op1, op2, shift_amt;
 	decode_fields_R(dest_reg, op1, op2, shift_amt, funct_code, instr);
 		//filter funct 0x0_
 	cout << "dest_reg " << dest_reg << " op1 " << op1 << " op2 " << op2 << " shift " << shift_amt << " funct " << funct_code << " instr " << instr << endl;	
@@ -213,7 +213,7 @@ void execute_R(unsigned int instr, unsigned char* data, int (&registers)[32]) {
 	}
 }
 
-void decode_fields_R (unsigned int &dest_reg, unsigned int &op1, unsigned int &op2, unsigned int &shift_amt, unsigned int &funct_code, const unsigned int &instr){
+void decode_fields_R (uint32_t &dest_reg, uint32_t &op1, uint32_t &op2, uint32_t &shift_amt, uint32_t &funct_code, const uint32_t &instr){
 	dest_reg = (instr << 16) >> 27;
 	op1 = (instr << 6) >> 27;
 	op2 = (instr << 11) >> 27;
@@ -222,13 +222,13 @@ void decode_fields_R (unsigned int &dest_reg, unsigned int &op1, unsigned int &o
 
 }
 
-void add(unsigned int dest_reg, unsigned int op1, unsigned int op2, int (&registers)[32]){
+void add(uint32_t dest_reg, uint32_t op1, uint32_t op2, int32_t (&registers)[32]){
 	cout << "add" << endl;
-	int source1 = registers[op1];
-	int source2 = registers[op2];
+	int32_t source1 = registers[op1];
+	int32_t source2 = registers[op2];
 	long sum = source1 + source2;
 	//check for signed/unsigned overflow
-	int sum2 = source1 + source2;
+	int32_t sum2 = source1 + source2;
 	if (sum != sum2) exit(-10);
 	else registers[dest_reg] =  sum2;
 }

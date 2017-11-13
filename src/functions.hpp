@@ -1,15 +1,23 @@
 #include <vector>
 using namespace std;
-void execute(unsigned int instr, unsigned char* data, int (&registers)[32] , unsigned int& pc);
-void execute_R(unsigned int instr, unsigned char* data, int (&registers)[32]);
-void execute_J(unsigned int instr, unsigned char* data, int (&registers)[32], unsigned char& opcode, unsigned int& pc);
-void execute_I(unsigned int instr, unsigned char* data, int (&registers)[32], unsigned char& opcode);
-void decode_fields_R (unsigned int &dest_reg, unsigned int &op1, unsigned int &op2, unsigned int &shift_amt, unsigned int &funct_code, const unsigned int &instr);
-
+void execute(uint32_t instr, uint8_t* data, int32_t (&registers)[32] , uint32_t& pc);
+void execute_R(uint32_t instr, uint8_t* data, int32_t (&registers)[32], uint32_t& pc);
+void execute_J(uint32_t instr, uint8_t* data, int32_t (&registers)[32], uint8_t& opcode, uint32_t& pc);
+void execute_I(uint32_t instr, uint8_t* data, int32_t (&registers)[32], uint8_t& opcode);
+void decode_fields_R (uint32_t &dest_reg, uint32_t &op1, uint32_t &op2, uint32_t &shift_amt, uint32_t &funct_code, const uint32_t &instr);
+void decode_fields_I (int32_t &dest_reg, int32_t &src_reg, int32_t& immediate, const int32_t &instruction);
 //R type instructions
-void add(unsigned int dest_reg, unsigned int op1, unsigned int op2, int (&registers)[32]);
+void jr(uint32_t src_reg, int32_t (&registers)[32], uint32_t& pc);
+void add(uint32_t dest_reg, uint32_t op1, uint32_t op2, int32_t (&registers)[32]);
+void sll(uint32_t dest_reg, uint32_t op, uint32_t shift_amt, int32_t (&registers)[32]);
+
+//I type instructions
+void addi(int32_t &dest_reg, int32_t &src_reg, int32_t &immediate, int32_t (&registers)[32]);
+void addiu(int32_t &dest_reg, int32_t &src_reg, int32_t &immediate, int32_t (&registers)[32]);
+void lui(int32_t &dest_reg, int32_t &immediate, int32_t (&registers)[32]);
+void sb(uint32_t address, uint8_t (&data)[DATA_SIZE], uint8_t value);
+void sh(uint32_t address, uint8_t (&data)[DATA_SIZE], int32_t value);
+void sw(uint32_t address, uint8_t (&data)[DATA_SIZE], int32_t value);
 
 //helper functions
-unsigned int bin_string_to_int(string input);
-
-
+uint32_t bin_string_to_int(string input);
