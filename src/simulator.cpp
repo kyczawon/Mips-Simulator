@@ -99,7 +99,7 @@ int32_t read_mem_s(uint32_t address, uint8_t* data){
 	else exit(-11);
 }
 
-void execute(vector <uint32_t> instructions, uint8_t* data, int32_t (&registers)[32], uint32_t& pc) {
+void execute(vector <uint32_t> &instructions, uint8_t* data, int32_t (&registers)[32], uint32_t& pc) {
 	cout << "enter execute" << endl;
 	uint32_t instr = instructions[pc];
 	//decode instruction and call correct subfunction
@@ -108,7 +108,7 @@ void execute(vector <uint32_t> instructions, uint8_t* data, int32_t (&registers)
 	//check if R type
 	if (opcode == 0)
 		//execute
-		execute_R(instr, data, registers, pc);
+		execute_R(instr, data, registers, pc, instructions);
 	//check if J type
 	else if (opcode == 2 || opcode == 3){
 		//execute
@@ -119,10 +119,9 @@ void execute(vector <uint32_t> instructions, uint8_t* data, int32_t (&registers)
 }
 
 void execute_J(uint32_t instr, uint8_t* data, int32_t (&registers)[32], uint8_t& opcode, uint32_t& pc) {
-
 }
 
-void execute_R(uint32_t instr, uint8_t* data, int32_t (&registers)[32], uint32_t& pc) {
+void execute_R(uint32_t instr, uint8_t* data, int32_t (&registers)[32], uint32_t& pc, vector<uint32_t> &instructions) {
 	//decode relevant operation from function code(LS 5 bits)
 	uint32_t funct_code = (instr << 26) >> 26;
 	uint32_t dest_reg, op1, op2, shift_amt;
@@ -148,9 +147,9 @@ void execute_R(uint32_t instr, uint8_t* data, int32_t (&registers)[32], uint32_t
 			// case 7:		// srav rd, rt, rs 	000111
 			// 	srav(---);
 			// 	break;
-			// case 8:		// jr 	rs 			001000
-			// 	jr(op1, registers, pc);
-			// 	break;
+			case 8:		// jr 	rs 			001000
+			 	jr(instructions, data, op1, registers, pc);
+			 	break;
 			// case 9:		// jalr rd, rs 		001001
 			// 	jalr(---);
 			// 	break;
@@ -348,7 +347,9 @@ void decode_fields_R (uint32_t &op1, uint32_t &op2, uint32_t &dest_reg, uint32_t
 
 /////R TYPE INATRUCTIONS//////
 
-void jr(uint32_t src_reg, int32_t (&registers)[32], uint32_t& pc){
+void jr(vector <uint32_t> &instructions, uint8_t* data, uint32_t src_reg, int32_t (&registers)[32], uint32_t& pc){
+	pc++;
+	execute(instructions, data, registers, pc);
 	pc = (registers[src_reg] / 4) - 1;
 }
 
