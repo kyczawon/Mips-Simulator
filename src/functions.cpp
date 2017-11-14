@@ -78,78 +78,106 @@ void execute_R(uint32_t instr, uint8_t* data, int32_t (&registers)[32], uint32_t
 	//decode relevant operation from function code(LS 5 bits)
 	uint32_t funct_code = (instr << 26) >> 26;
 	uint32_t dest_reg, op1, op2, shift_amt;
-	decode_fields_R(dest_reg, op1, op2, shift_amt, funct_code, instr);
+	decode_fields_R(op1, op2, dest_reg, shift_amt, funct_code, instr);
 		//filter funct 0x0_
 	if (funct_code < 0x10){
 		switch(funct_code) {
-			//sll 	rd, rt, sa 	000000
-			// 	case 0: sll(---);
-			//srl 	rd, rt, sa 	000010
-			// 	case 1: srl(---);
-			//sra 	rd, rt, sa 	000011
-			// 	case 3: sra(---);
-			//sllv 	rd, rt, rs 	000100
-			// 	case 4: sllv(---);
-			//srlv 	rd, rt, rs 	000110
-			// 	case 6: srlv(---);
-			//srav 	rd, rt, rs 	000111
-			// 	case 7: srav(---);
-			//jr 	rs 			001000
-			//case 8: jr(src_reg, registers, pc);
-			//jalr 	rd, rs 		001001
-			// 	case 9: jalr(---);
-			//syscall 			001100
-			// 	case 12: syscall(---);
-			//break 			001101
-			// 	case 13: brk(---);
+			// case 0: 		// sll 	rd, rt, sa 	000000
+			// 	sll(---);
+			// 	break;
+			// case 1:		// srl 	rd, rt, sa 	000010
+			// 	srl(---);
+			// 	break;
+			// case 3:		// sra 	rd, rt, sa 	000011
+			// 	sra(---);
+			// 	break;
+			// case 4:		// sllv rd, rt, rs 	000100
+			// 	sllv(---);
+			// 	break;
+			// case 6:		// srlv rd, rt, rs 	000110
+			// 	srlv(---);
+			// 	break;
+			// case 7:		// srav rd, rt, rs 	000111
+			// 	srav(---);
+			// 	break;
+			// case 8:		// jr 	rs 			001000
+			// 	jr(op1, registers, pc);
+			// 	break;
+			// case 9:		// jalr rd, rs 		001001
+			// 	jalr(---);
+			// 	break;
+			// case 12:		// syscall 			001100
+			// 	syscall(---);
+			// 	break;
+			// case 13:		// break 			001101
+			// 	brk(---);
+			// 	break;
 		}
 	}
 
 		//filter funct 0x1_
 	else if (funct_code < 0x20){
-		// switch(funct_code) {
-		// 	//mfhi 	rd 			010000
-		// 	case 16: mfhi(---);
-		// 	//mthi 	rs 			010001
-		// 	case 17: mthi(---);
-		// 	//mflo 	rd 			010010
-		// 	case 18: mflo(---);
-		// 	//mtlo 	rs 			010011
-		// 	case 19: mtlo(---);
-		// 	//mult 	rs, rt 		011000
-		// 	case 24: mult(---);
-		// 	//multu rs, rt 		011001
-		// 	case 25: multu(---);
-		// 	//div 	rs, rt 		011010
-		// 	case 26: div(---);
-		// 	//divu 	rs, rt 		011011
-		// 	case 27: divu(---);
-		// }
+		switch(funct_code) {
+			// case 16:	//mfhi 	rd 				010000
+			// 	mfhi(---);
+			// 	break;
+			// case 17: 	//mthi 	rs 			010001
+			// 	mthi(---);
+			// 	break;
+			// case 18: 	//mflo 	rd 			010010
+			// 	mflo(---);
+			// 	break;
+			// case 19:	//mtlo 	rs 				010011
+			// 	mtlo(---);
+			// 	break;
+			// case 24:	//mult 	rs, rt 			011000
+			// 	mult(---);
+			// 	break;
+			// case 25: 	//multu rs, rt 		011001
+			// 	multu(---);
+			// 	break;
+			// case 26: 	//div 	rs, rt 		011010
+			// 	div(---);
+			// 	break;
+			// case 27: 	//divu 	rs, rt 		011011
+			// 	divu(---);
+			// 	break;
+		}
 	}
 
 		//filter funct 0x2_
 	else{
 		switch(funct_code) {
-			//add 	rd, rs, rt 	100000
-			case 32: add(dest_reg, op1, op2, registers);
-			// //addu 	rd, rs, rt 	100001
-			// case 33: addu(---);
-			// //sub 	rd, rs, rt 	100010
-			// case 34: sub(---);
-			// //subu 	rd, rs, rt 	100011
-			// case 35: subu(---);
-			// //and 	rd, rs, rt 	100100
-			// case 36: AND(---);
-			// //or 	rd, rs, rt 	100101
-			// case 37: OR(---);
-			// //xor 	rd, rs, rt 	100110
-			// case 38: XOR(---);
-			// //nor 	rd, rs, rt 	100111
-			// case 39: NOR(---);
-			// //slt 	rd, rs, rt 	101010
-			// case 42: slt(---);
-			// //sltu 	rd, rs, rt 	101011
-			// case 43: sltu(---);
+			case 32:	//add 	rd, rs, rt 	100000
+				add(dest_reg, op1, op2, registers);
+				break;
+			// case 33:	//addu 	rd, rs, rt 	100001
+			// 	addu(---);
+			// 	break;
+			// case 34:	//sub 	rd, rs, rt 	100010
+			// 	sub(---);
+			// 	break;
+			// case 35:	//subu 	rd, rs, rt 	100011
+			// 	subu(---);
+			// 	break;
+			// case 36:	//and 	rd, rs, rt 	100100
+			// 	AND(---);
+			// 	break;
+			// case 37:	//or 	rd, rs, rt 	100101
+			// 	OR(---);
+			// 	break;
+			// case 38: //xor 	rd, rs, rt 	100110
+			// 	XOR(---);
+			// 	break;
+			// case 39:	//nor 	rd, rs, rt 	100111
+			// 	NOR(---);
+			// 	break;
+			// case 42: //slt 	rd, rs, rt 	101010
+			// 	slt(---);
+			// 	break;
+			// case 43: //sltu 	rd, rs, rt 	101011
+			// 	sltu(---);
+			// 	break;
 		}
 	}
 }
@@ -162,70 +190,90 @@ void execute_I (uint32_t instr, uint8_t* data, int32_t (&registers)[32], uint8_t
 	//filter 0x0_
 	if (opcode < 0x10){
 		switch(opcode){
-			//CORNER CASE --> DOUBLE POSSIBILITY
-			//case 1: {
-				//bgez 	rs, label 		000001
-				//if (dest_reg == 1) bgez (---);
-				//bltz 	rs, label 		000001 		
-				//else bltz(---);
-			// }
-
-			//beq 	rs, rt, label 	000100 
-			//case 4: beq(---);
-			//bne 	rs, rt, label 	000101
-			//case 5: bne(---);
-			//blez 	rs, label 		000110 
-			//case 6: blez(---);
-			//bgtz 	rs, label 		000111
-			//case 7: bgtz(---); 
-			//addi 	rt, rs, imm 	001000 
-			case 8: addi(dest_reg, src_reg, immediate, registers);
-			//addiu rt, rs, imm 	001001
-			case 9: addiu(dest_reg, src_reg, immediate, registers); 
-			//slti 	rt, rs, imm 	001010 
-			//case 10: slti(---);
-			//sltiu rt, rs, imm 	001011
-			//case 11: sltiu(---); 
-			//andi 	rt, rs, imm 	001100
-			//case 12: andi(---); 
-			//ori 	rt, rs, imm 	001101
-			//case 13: ori(---); 
-			//xori 	rt, rs, imm 	001110 
-			//case 14: xori(---);
-			//lui 	rt, imm 		001111
-			case 15: lui(dest_reg, immediate, registers); 
-		}
-	}
-
-	//filter 0x1_
-	else if (opcode < 0x20){
-		switch(opcode){
-			// //lb 	rt, imm(rs) 	100000
-			// case 32: lb(---); 
-			// //lh 	rt, imm(rs) 	100001
-			// case 33: lh(---); 
-			// //lw 	rt, imm(rs) 	100011
-			// case 35: lw(---); 
-			// //lbu 	rt, imm(rs) 	100100
-			// case 36: lbu(---); 
-			// //lhu 	rt, imm(rs) 	100101 
-			// case 37: lhu(---);
-			// //sb 	rt, imm(rs) 	101000
-			case 40: sb(registers[src_reg] + immediate, data, registers[dest_reg]);
-			// //sh 	rt, imm(rs) 	101001
-			case 41: sh(registers[src_reg] + immediate, data, registers[dest_reg]); 
-			// //sw 	rt, imm(rs) 	101011
-			case 43: sw(registers[src_reg] + immediate, data, registers[dest_reg]);
+			// case 1:		// CORNER CASE --> DOUBLE POSSIBILITY
+			// 	// bgez 	rs, label 	000001
+			// 	if (dest_reg == 1) bgez (---);
+			// 	// bltz 	rs, label 	000001 		
+			// 	else bltz(---);
+			// 	break;
+			// case 4:		// beq	rs, rt, label 		000100 
+			// 	beq(---);
+			// 	break;
+			// case 5:		// bne 	rs, rt, label 		000101
+			// 	bne(---);
+			// 	break;
+			// case 6:		// blez 	rs, label 		000110 
+			// 	blez(---);
+			// 	break;
+			// case 7:		// bgtz 	rs, label 		000111
+			// 	bgtz(---);
+			// 	break;
+			case 8:		// addi 	rt, rs, imm 		001000 
+				addi(dest_reg, src_reg, immediate, registers);
+				break;
+			case 9:		// addiu 	rt, rs, imm 		001001
+				addiu(dest_reg, src_reg, immediate, registers); 
+				break;
+			// case 10:	// slti 	rt, rs, imm 		001010 
+			// 	slti(---);
+			// 	break;
+			// case 11:	// sltiu 	rt, rs, imm 		001011
+			// 	sltiu(---);
+			// 	break;
+			// case 12:	// andi 	rt, rs, imm 		001100
+			// 	andi(---); 
+			// 	break;
+			// case 13:	// ori 	rt, rs, imm 			001101
+			// 	ori(---);
+			// 	break;
+			// case 14:	// xori 	rt, rs, imm 		001110 
+			// 	xori(---);
+			// 	break;
+			case 15:	// lui 		rt, imm 			001111
+				lui(dest_reg, immediate, registers); 
+				break;
 		}
 	}
 
 	//filter 0x2_
+	else if (opcode < 0x30){
+		switch(opcode){
+			// case 32:	//lb 	rt, imm(rs) 	100000
+			// 	lb(---);
+			// 	break;
+			// case 33:	//lh 	rt, imm(rs) 	100001
+			// 	lh(---);
+			// 	break;
+			// case 35:	//lw 	rt, imm(rs) 	100011
+			// 	lw(---);
+			// 	break;
+			// case 36:	//lbu 	rt, imm(rs) 	100100
+			// 	lbu(---);
+			// 	break;
+			// case 37:	//lhu 	rt, imm(rs) 	100101 
+			// 	lhu(---);
+			// 	break;
+			case 40:	//sb 	rt, imm(rs) 	101000
+				sb(registers[src_reg] + immediate, data, registers[dest_reg]);
+				break;
+			case 41:	//sh 	rt, imm(rs) 	101001
+				sh(registers[src_reg] + immediate, data, registers[dest_reg]);
+				break;
+			case 43:	//sw 	rt, imm(rs) 	101011
+				sw(registers[src_reg] + immediate, data, registers[dest_reg]);
+				break;
+		}
+	}
+
+	//filter 0x3_
 	else{
 		switch(opcode){
-			// //lwc1 	rt, imm(rs) 	110001 
-			// case 49: lwc1(---);
-			// //swc1	rt, imm(rs) 	111001 
-			// case 57: swc1(---);
+			// case 49:	//lwc1 	rt, imm(rs) 	110001 
+			// 	lwc1(---);
+			// 	break;
+			// case 57:	//swc1	rt, imm(rs) 	111001 
+			// 	swc1(---);
+			// 	break;
 		}
 	}	
 
@@ -240,10 +288,10 @@ void decode_fields_I (int32_t &dest_reg, int32_t &src_reg, int32_t& immediate, c
 	else immediate = (immediate >> 16) | 0xFFFF0000;
 }
 
-void decode_fields_R (uint32_t &dest_reg, uint32_t &op1, uint32_t &op2, uint32_t &shift_amt, uint32_t &funct_code, const uint32_t &instr) {
-	dest_reg = (instr << 16) >> 27;
+void decode_fields_R (uint32_t &op1, uint32_t &op2, uint32_t &dest_reg, uint32_t &shift_amt, uint32_t &funct_code, const uint32_t &instr) {
 	op1 = (instr << 6) >> 27;
 	op2 = (instr << 11) >> 27;
+	dest_reg = (instr << 16) >> 27;
 	shift_amt = (instr << 21) >> 27;
 	funct_code = (instr << 26) >> 26;
 
@@ -289,9 +337,11 @@ void addi(int32_t &dest_reg, int32_t &src_reg, int32_t &immediate, int32_t (&reg
 
 void addiu(int32_t &dest_reg, int32_t &src_reg, int32_t &immediate, int32_t (&registers)[32]){
 	registers[dest_reg] = registers[src_reg] + immediate;
+	cout << "executing addiu" << endl;
 }
 
 void lui(int32_t &dest_reg, int32_t &immediate, int32_t (&registers)[32]){
+	cout << "executing lui" << endl;
 	registers[dest_reg] = immediate << 16;
 }
 
@@ -303,8 +353,7 @@ void sb(uint32_t address, uint8_t* data, uint8_t value){
 	}
 	//else check if instruction is trying to write ADDR_PUTC location
 	else if (address > 0x30000003 && address < 0x30000008){
-		int8_t temp = (int8_t) value;
-		cout << temp << endl;
+		cout << unsigned(value) << endl;
 	}
 	//otherwise return error code
 	else exit(-11);
@@ -320,6 +369,7 @@ void sh(uint32_t address, uint8_t* data, int32_t value){
 }
 
 void sw(uint32_t address, uint8_t* data, int32_t value){
+	cout << "executing sw" << endl;
 	if (address % 4 != 0) exit(-11);
 	int32_t lower_half, higher_half;
 	lower_half = value & 0x0000FFFF;

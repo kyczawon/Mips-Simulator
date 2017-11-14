@@ -126,7 +126,7 @@ void execute_R(uint32_t instr, uint8_t* data, int32_t (&registers)[32], uint32_t
 	//decode relevant operation from function code(LS 5 bits)
 	uint32_t funct_code = (instr << 26) >> 26;
 	uint32_t dest_reg, op1, op2, shift_amt;
-	decode_fields_R(dest_reg, op1, op2, shift_amt, funct_code, instr);
+	decode_fields_R(op1, op2, dest_reg, shift_amt, funct_code, instr);
 		//filter funct 0x0_
 	if (funct_code < 0x10){
 		switch(funct_code) {
@@ -149,7 +149,7 @@ void execute_R(uint32_t instr, uint8_t* data, int32_t (&registers)[32], uint32_t
 			// 	srav(---);
 			// 	break;
 			// case 8:		// jr 	rs 			001000
-			// 	jr(src_reg, registers, pc);
+			// 	jr(op1, registers, pc);
 			// 	break;
 			// case 9:		// jalr rd, rs 		001001
 			// 	jalr(---);
@@ -336,10 +336,10 @@ void decode_fields_I (int32_t &dest_reg, int32_t &src_reg, int32_t& immediate, c
 	else immediate = (immediate >> 16) | 0xFFFF0000;
 }
 
-void decode_fields_R (uint32_t &dest_reg, uint32_t &op1, uint32_t &op2, uint32_t &shift_amt, uint32_t &funct_code, const uint32_t &instr) {
-	dest_reg = (instr << 16) >> 27;
+void decode_fields_R (uint32_t &op1, uint32_t &op2, uint32_t &dest_reg, uint32_t &shift_amt, uint32_t &funct_code, const uint32_t &instr) {
 	op1 = (instr << 6) >> 27;
 	op2 = (instr << 11) >> 27;
+	dest_reg = (instr << 16) >> 27;
 	shift_amt = (instr << 21) >> 27;
 	funct_code = (instr << 26) >> 26;
 

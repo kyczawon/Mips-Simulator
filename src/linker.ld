@@ -1,7 +1,7 @@
 ENTRY(entry)
 SECTIONS
 {
-  . = 0x10000000;;
+  . = 0x10000000;
   .text : { *(.entry) }
   .text : { *(.text) }
 
