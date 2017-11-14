@@ -38,9 +38,10 @@ MIPS_LDFLAGS += -Wl,--build-id=none
 # Build the simulation binary
 bin/mips_simulator : src/simulator.cpp src/functions.cpp
 	mkdir -p
-	g++ -W -Wall -c src/simulator.cpp
-	g++ -W -Wall -c src/functions.cpp
-	g++ simulator.o functions.o -o bin/mips_simulator
+	g++ -W -Wall src/simulator.cpp  bin/mips_simulator
+	# g++ -W -Wall -c -std=c++11 src/simulator.cpp
+	# g++ -W -Wall -c -std=c++11 src/functions.cpp
+	# g++ simulator.o functions.o -o bin/mips_simulator
 
 # In order to comply with spec
 simulator : bin/mips_simulator
