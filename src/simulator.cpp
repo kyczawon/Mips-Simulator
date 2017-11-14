@@ -44,7 +44,6 @@ int32_t main(int32_t argc, int8_t* argv[])
 
 	//execute instructions
 	while (pc < instructions.size()){
-		uint32_t instr = instructions[pc];
 		execute(instr, data, registers, pc);
 		pc+=1;
 	}
@@ -106,8 +105,9 @@ int32_t read_reg(uint32_t address, int32_t (&registers)[32]){
 	return 0;
 }
 
-void execute(uint32_t instr, uint8_t* data, int32_t (&registers)[32], uint32_t& pc) {
+void execute(vector <uint32_t> instructions, uint8_t* data, int32_t (&registers)[32], uint32_t& pc) {
 	cout << "enter execute" << endl;
+	uint32_t instr = instructions[pc];
 	//decode instruction and call correct subfunction
 	//isolate opcode
 	uint8_t opcode = instr >> 26;

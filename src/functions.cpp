@@ -1,5 +1,6 @@
 #include <vector>
 #include <cstdint>
+#include <iostream>
 #include "constants.hpp"
 #include "functions.hpp"
 using namespace std;
@@ -42,24 +43,17 @@ int32_t read_mem_s(uint32_t address, uint8_t (&data)[DATA_SIZE]){
 }
 
 
-void execute(vector <uint8_t> &instructions, uint8_t* data, int32_t (&registers)[32], uint32_t& pc) {
-
-	//get instruction from 4 bytes in mem
+void execute(vector <uint32_t> instructions, uint8_t* data, int32_t (&registers)[32], uint32_t& pc) {
 	uint32_t instr = instructions[pc];
-	for (int32_t x = 1; x < 4; x++){
-		instr = instr << 8;
-		instr += instructions[pc + x];
-	}
-
 	//decode instruction and call correct subfunction
 	//isolate opcode
 	uint8_t opcode = instr >> 26;
 	//check if R type
-	if (opcode == 0)
+	if (opcode == 0) {
 		//execute
 		execute_R(instr, data, registers);
 	//check if J type
-	else if (opcode == 2 || opcode == 3){
+	} else if (opcode == 2 || opcode == 3){
 		//execute
 		execute_J(instr, data, registers, opcode, pc);
 	}
@@ -70,7 +64,7 @@ void execute(vector <uint8_t> &instructions, uint8_t* data, int32_t (&registers)
 void execute_J(uint32_t instr, uint8_t* data, int32_t (&registers)[32], uint8_t& opcode, uint32_t& pc);
 void execute_I(uint32_t instr, uint8_t* data, int32_t (&registers)[32], uint8_t& opcode);
 
-void execute_R(uint32_t instr, uint8_t* data, int32_t (&registers)[32], uint32_t& pc) {
+void execute_R(uint32_t instr, uint8_t* data, int32_t (&registers)[32], uint32_t& pc, vector <uint32_t> &instructions) {
 	//decode relevant operation from function code(LS 5 bits)
 	int32_t funct_code = (instr << 26) >> 26;
 	int32_t dest_reg, op1, op2, shift_amt;
@@ -91,7 +85,7 @@ void execute_R(uint32_t instr, uint8_t* data, int32_t (&registers)[32], uint32_t
 			//srav 	rd, rt, rs 	000111
 			// 	case 7: srav(---);
 			//jr 	rs 			001000
-			case 8: jr(src_reg, registers, pc);
+			case 8: jr(src_reg, registers, pc, instructions);
 			//jalr 	rd, rs 		001001
 			// 	case 9: jalr(---);
 			//syscall 			001100
@@ -164,7 +158,7 @@ void execute_I (uint32_t instr, uint32_t  (&data)[DATA_SIZE], int32_t (&register
 				//if (dest_reg == 1) bgez (---);
 				//bltz 	rs, label 		000001 		
 				//else bltz(---);
-			}
+			//}
 
 			//beq 	rs, rt, label 	000100 
 			//case 4: beq(---);
@@ -248,7 +242,8 @@ void decode_fields_R (int32_t &dest_reg, int32_t &op1, int32_t &op2, int32_t &sh
 
 /////R TYPE INATRUCTIONS//////
 
-void jr(uint32_t src_reg, int32_t (&registers)[32], uint32_t& pc){
+void jr(uint32_t src_reg, int32_t (&registers)[32], uint32_t& pc, vector <uint32_t> instructions, uint8_t (&data)[DATA_SIZE]){
+	execute()
 	pc = (registers[src_reg] / 4) - 1;
 }
 
