@@ -1,7 +1,12 @@
 #include <vector>
+<<<<<<< ale
+#include <cstdint>
+#include <iostream>
+=======
 #include <stdint.h>
 #include <iostream>
 #include <cmath>
+>>>>>>> master
 #include "constants.hpp"
 #include "functions.hpp"
 using namespace std;
@@ -53,16 +58,21 @@ int32_t read_mem_s(uint32_t address, uint8_t* data){
 }
 
 
+<<<<<<< ale
+void execute(vector <uint32_t> instructions, uint8_t* data, int32_t (&registers)[32], uint32_t& pc) {
+	uint32_t instr = instructions[pc];
+=======
 void execute(uint32_t instr, uint8_t* data, int32_t (&registers)[32] , uint32_t& pc) {
+>>>>>>> master
 	//decode instruction and call correct subfunction
 	//isolate opcode
 	uint8_t opcode = instr >> 26;
 	//check if R type
-	if (opcode == 0)
+	if (opcode == 0) {
 		//execute
 		execute_R(instr, data, registers, pc);
 	//check if J type
-	else if (opcode == 2 || opcode == 3){
+	} else if (opcode == 2 || opcode == 3){
 		//execute
 		execute_J(instr, data, registers, opcode, pc);
 	}
@@ -74,7 +84,7 @@ void execute_J(uint32_t instr, uint8_t* data, int32_t (&registers)[32], uint8_t&
 
 }
 
-void execute_R(uint32_t instr, uint8_t* data, int32_t (&registers)[32], uint32_t& pc) {
+void execute_R(uint32_t instr, uint8_t* data, int32_t (&registers)[32], uint32_t& pc, vector <uint32_t> &instructions) {
 	//decode relevant operation from function code(LS 5 bits)
 	uint32_t funct_code = (instr << 26) >> 26;
 	uint32_t dest_reg, op1, op2, shift_amt;
@@ -82,6 +92,28 @@ void execute_R(uint32_t instr, uint8_t* data, int32_t (&registers)[32], uint32_t
 		//filter funct 0x0_
 	if (funct_code < 0x10){
 		switch(funct_code) {
+<<<<<<< ale
+			//sll 	rd, rt, sa 	000000
+			// 	case 0: sll(---);
+			//srl 	rd, rt, sa 	000010
+			// 	case 1: srl(---);
+			//sra 	rd, rt, sa 	000011
+			// 	case 3: sra(---);
+			//sllv 	rd, rt, rs 	000100
+			// 	case 4: sllv(---);
+			//srlv 	rd, rt, rs 	000110
+			// 	case 6: srlv(---);
+			//srav 	rd, rt, rs 	000111
+			// 	case 7: srav(---);
+			//jr 	rs 			001000
+			case 8: jr(src_reg, registers, pc, instructions);
+			//jalr 	rd, rs 		001001
+			// 	case 9: jalr(---);
+			//syscall 			001100
+			// 	case 12: syscall(---);
+			//break 			001101
+			// 	case 13: brk(---);
+=======
 			// case 0: 		// sll 	rd, rt, sa 	000000
 			// 	sll(---);
 			// 	break;
@@ -112,6 +144,7 @@ void execute_R(uint32_t instr, uint8_t* data, int32_t (&registers)[32], uint32_t
 			// case 13:		// break 			001101
 			// 	brk(---);
 			// 	break;
+>>>>>>> master
 		}
 	}
 
@@ -190,6 +223,40 @@ void execute_I (uint32_t instr, uint8_t* data, int32_t (&registers)[32], uint8_t
 	//filter 0x0_
 	if (opcode < 0x10){
 		switch(opcode){
+<<<<<<< ale
+			//CORNER CASE --> DOUBLE POSSIBILITY
+			//case 1: {
+				//bgez 	rs, label 		000001
+				//if (dest_reg == 1) bgez (---);
+				//bltz 	rs, label 		000001 		
+				//else bltz(---);
+			//}
+
+			//beq 	rs, rt, label 	000100 
+			//case 4: beq(---);
+			//bne 	rs, rt, label 	000101
+			//case 5: bne(---);
+			//blez 	rs, label 		000110 
+			//case 6: blez(---);
+			//bgtz 	rs, label 		000111
+			//case 7: bgtz(---); 
+			//addi 	rt, rs, imm 	001000 
+			case 8: addi(dest_reg, src_reg, immediate, registers);
+			//addiu rt, rs, imm 	001001
+			case 9: addiu(dest_reg, src_reg, immediate, registers); 
+			//slti 	rt, rs, imm 	001010 
+			//case 10: slti(---);
+			//sltiu rt, rs, imm 	001011
+			//case 11: sltiu(---); 
+			//andi 	rt, rs, imm 	001100
+			//case 12: andi(---); 
+			//ori 	rt, rs, imm 	001101
+			//case 13: ori(---); 
+			//xori 	rt, rs, imm 	001110 
+			//case 14: xori(---);
+			//lui 	rt, imm 		001111
+			case 15: lui(dest_reg, immediate, registers); 
+=======
 			// case 1:		// CORNER CASE --> DOUBLE POSSIBILITY
 			// 	// bgez 	rs, label 	000001
 			// 	if (dest_reg == 1) bgez (---);
@@ -232,6 +299,7 @@ void execute_I (uint32_t instr, uint8_t* data, int32_t (&registers)[32], uint8_t
 			case 15:	// lui 		rt, imm 			001111
 				lui(dest_reg, immediate, registers); 
 				break;
+>>>>>>> master
 		}
 	}
 
@@ -300,7 +368,8 @@ void decode_fields_R (uint32_t &op1, uint32_t &op2, uint32_t &dest_reg, uint32_t
 
 /////R TYPE INATRUCTIONS//////
 
-void jr(uint32_t src_reg, int32_t (&registers)[32], uint32_t& pc){
+void jr(uint32_t src_reg, int32_t (&registers)[32], uint32_t& pc, vector <uint32_t> instructions, uint8_t (&data)[DATA_SIZE]){
+	execute()
 	pc = (registers[src_reg] / 4) - 1;
 }
 
