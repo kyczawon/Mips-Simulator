@@ -23,7 +23,10 @@ int main(int argc, char* argv[])
 	 }
 
 	//global variables
+	 //program counter
 	uint32_t pc = 0;
+	 //HI, LO special registers
+	int32_t HiLo[2] = {0};
 
 	//open Binary file
 	ifstream infile;
@@ -43,10 +46,12 @@ int main(int argc, char* argv[])
 		instructions.push_back(x);
 	}
 
+
+
 	//execute instructions
 	while (pc < instructions.size()){
 		cout << "executing" << endl;
-		execute(instructions, data, registers, pc);
+		execute(instructions, data, registers, pc, HiLo);
 		pc+=1;
 	}
 
@@ -99,7 +104,7 @@ int32_t read_mem_s(uint32_t address, uint8_t* data){
 	else exit(-11);
 }
 
-void execute(vector <uint32_t> &instructions, uint8_t* data, int32_t (&registers)[32], uint32_t& pc) {
+void execute(vector <uint32_t> &instructions, uint8_t* data, int32_t (&registers)[32], uint32_t& pc, int32_t (&HiLo)[2]) {
 	cout << "enter execute" << endl;
 	uint32_t instr = instructions[pc];
 	//decode instruction and call correct subfunction
@@ -108,7 +113,7 @@ void execute(vector <uint32_t> &instructions, uint8_t* data, int32_t (&registers
 	//check if R type
 	if (opcode == 0)
 		//execute
-		execute_R(instr, data, registers, pc, instructions);
+		execute_R(instr, data, registers, pc, instructions, HiLo);
 	//check if J type
 	else if (opcode == 2 || opcode == 3){
 		//execute
@@ -121,7 +126,7 @@ void execute(vector <uint32_t> &instructions, uint8_t* data, int32_t (&registers
 void execute_J(uint32_t instr, uint8_t* data, int32_t (&registers)[32], uint8_t& opcode, uint32_t& pc) {
 }
 
-void execute_R(uint32_t instr, uint8_t* data, int32_t (&registers)[32], uint32_t& pc, vector<uint32_t> &instructions) {
+void execute_R(uint32_t instr, uint8_t* data, int32_t (&registers)[32], uint32_t& pc, vector<uint32_t> &instructions, int32_t (&HiLo)[2]) {
 	//decode relevant operation from function code(LS 5 bits)
 	uint32_t funct_code = (instr << 26) >> 26;
 	uint32_t dest_reg, op1, op2, shift_amt;
@@ -129,54 +134,48 @@ void execute_R(uint32_t instr, uint8_t* data, int32_t (&registers)[32], uint32_t
 		//filter funct 0x0_
 	if (funct_code < 0x10){
 		switch(funct_code) {
-			// case 0: 		// sll 	rd, rt, sa 	000000
-			// 	sll(---);
-			// 	break;
-			// case 1:		// srl 	rd, rt, sa 	000010
-			// 	srl(---);
-			// 	break;
-			// case 3:		// sra 	rd, rt, sa 	000011
-			// 	sra(---);
-			// 	break;
-			// case 4:		// sllv rd, rt, rs 	000100
-			// 	sllv(---);
-			// 	break;
-			// case 6:		// srlv rd, rt, rs 	000110
-			// 	srlv(---);
-			// 	break;
-			// case 7:		// srav rd, rt, rs 	000111
-			// 	srav(---);
-			// 	break;
-			case 8:		// jr 	rs 			001000
-			 	jr(instructions, data, op1, registers, pc);
+			case 0: 		// sll 	rd, rt, sa 	000000
+				sll(dest_reg, op2, shift_amt, registers);
+				break;
+			case 1:		// srl 	rd, rt, sa 	000010
+			 	srl(dest_reg, op2, shift_amt, registers);
 			 	break;
-			// case 9:		// jalr rd, rs 		001001
-			// 	jalr(---);
-			// 	break;
-			// case 12:		// syscall 			001100
-			// 	syscall(---);
-			// 	break;
-			// case 13:		// break 			001101
-			// 	brk(---);
-			// 	break;
+			case 3:		// sra 	rd, rt, sa 	000011
+			 	sra(dest_reg, op2, shift_amt, registers);
+			 	break;
+			case 4:		// sllv rd, rt, rs 	000100
+			 	sllv(dest_reg, op1, op2, registers);
+			 	break;
+			case 6:		// srlv rd, rt, rs 	000110
+			 	srlv(dest_reg, op1, op2, registers);
+			 	break;
+			case 7:		// srav rd, rt, rs 	000111
+			 	srav(dest_reg, op1, op2, registers);
+			 	break;
+			case 8:		// jr 	rs 			001000
+			 	jr(instructions, data, op1, registers, pc, HiLo);
+			 	break;
+			case 9:		// jalr rd, rs 		001001
+			 	jalr(instructions, data, op1, dest_reg, registers, pc, HiLo);
+			 	break;
 		}
 	}
 
 		//filter funct 0x1_
 	else if (funct_code < 0x20){
 		switch(funct_code) {
-			// case 16:	//mfhi 	rd 				010000
-			// 	mfhi(---);
-			// 	break;
-			// case 17: 	//mthi 	rs 			010001
-			// 	mthi(---);
-			// 	break;
-			// case 18: 	//mflo 	rd 			010010
-			// 	mflo(---);
-			// 	break;
-			// case 19:	//mtlo 	rs 				010011
-			// 	mtlo(---);
-			// 	break;
+			case 16:	//mfhi 	rd 			010000
+			 	mfhi(dest_reg, registers, HiLo[0]);
+			 	break;
+			case 17: 	//mthi 	rs 			010001
+			 	mthi(op1, registers, HiLo);
+			 	break;
+			case 18: 	//mflo 	rd 			010010
+				mflo(dest_reg, registers, HiLo[1]);
+			 	break;
+			case 19:	//mtlo 	rs 				010011
+			 	mtlo(op1, registers, HiLo);
+			 	break;
 			// case 24:	//mult 	rs, rt 			011000
 			// 	mult(---);
 			// 	break;
@@ -207,24 +206,24 @@ void execute_R(uint32_t instr, uint8_t* data, int32_t (&registers)[32], uint32_t
 			// case 35:	//subu 	rd, rs, rt 	100011
 			// 	subu(---);
 			// 	break;
-			// case 36:	//and 	rd, rs, rt 	100100
-			// 	AND(---);
-			// 	break;
-			// case 37:	//or 	rd, rs, rt 	100101
-			// 	OR(---);
-			// 	break;
-			// case 38: //xor 	rd, rs, rt 	100110
-			// 	XOR(---);
-			// 	break;
-			// case 39:	//nor 	rd, rs, rt 	100111
-			// 	NOR(---);
-			// 	break;
-			// case 42: //slt 	rd, rs, rt 	101010
-			// 	slt(---);
-			// 	break;
-			// case 43: //sltu 	rd, rs, rt 	101011
-			// 	sltu(---);
-			// 	break;
+			case 36:	//and 	rd, rs, rt 	100100
+				AND(dest_reg, op1, op2, registers);
+			 	break;
+			case 37:	//or 	rd, rs, rt 	100101
+			 	OR(dest_reg, op1, op2, registers);
+			 	break;
+			case 38: //xor 	rd, rs, rt 	100110
+			 	XOR(dest_reg, op1, op2, registers);
+			 	break;
+			case 39:	//nor 	rd, rs, rt 	100111
+			 	NOR(dest_reg, op1, op2, registers);
+			 	break;
+			case 42: //slt 	rd, rs, rt 	101010
+			 	slt(dest_reg, op1, op2, registers);
+			 	break;
+			case 43: //sltu 	rd, rs, rt 	101011
+			 	sltu(dest_reg, op1, op2, registers);
+			 	break;
 		}
 	}
 }
@@ -237,11 +236,15 @@ void execute_I (uint32_t instr, uint8_t* data, int32_t (&registers)[32], uint8_t
 	//filter 0x0_
 	if (opcode < 0x10){
 		switch(opcode){
-			// case 1:		// CORNER CASE --> DOUBLE POSSIBILITY
-			// 	// bgez 	rs, label 	000001
-			// 	if (dest_reg == 1) bgez (---);
+			// case 1:		// CORNER CASE --> MULTIPLE POSSIBILITY
 			// 	// bltz 	rs, label 	000001 		
-			// 	else bltz(---);
+			//	if (dest_reg == 0) bltz(---);
+			// 	// bgez 	rs, label 	000001
+			// 	else if (dest_reg == 1) bgez (---);
+			//	// bltzal	re, label	000001
+			//	else if (dest_reg == 16) bltzal(---);
+			//	// bgezal	rs, ladel	000001
+			//	else if (dest reg == 17) bgezal(---);
 			// 	break;
 			// case 4:		// beq	rs, rt, label 		000100 
 			// 	beq(---);
@@ -310,20 +313,7 @@ void execute_I (uint32_t instr, uint8_t* data, int32_t (&registers)[32], uint8_t
 				sw(registers[src_reg] + immediate, data, registers[dest_reg]);
 				break;
 		}
-	}
-
-	//filter 0x3_
-	else{
-		switch(opcode){
-			// case 49:	//lwc1 	rt, imm(rs) 	110001 
-			// 	lwc1(---);
-			// 	break;
-			// case 57:	//swc1	rt, imm(rs) 	111001 
-			// 	swc1(---);
-			// 	break;
-		}
 	}	
-
 }
 
 void decode_fields_I (int32_t &dest_reg, int32_t &src_reg, int32_t& immediate, const int32_t &instruction){
@@ -345,14 +335,70 @@ void decode_fields_R (uint32_t &op1, uint32_t &op2, uint32_t &dest_reg, uint32_t
 }
 
 
-/////R TYPE INATRUCTIONS//////
+/////R TYPE INSTRUCTIONS//////
 
-void jr(vector <uint32_t> &instructions, uint8_t* data, uint32_t src_reg, int32_t (&registers)[32], uint32_t& pc){
-	pc++;
-	execute(instructions, data, registers, pc);
-	pc = (registers[src_reg] / 4) - 1;
+void sll(uint32_t dest_reg, uint32_t op, uint32_t shift_amt, int32_t (&registers)[32]){
+	registers[dest_reg] = registers[op] << shift_amt;
 }
 
+void srl(uint32_t dest_reg, uint32_t op, uint32_t shift_amt, int32_t (&registers)[32]){
+	registers[dest_reg] = registers[op] >> shift_amt;
+}
+
+void sra(uint32_t dest_reg, uint32_t op, uint32_t shift_amt, int32_t (&registers)[32]){
+	int32_t num = registers[op];
+	//if num is positive, operation is same as srl
+	if (num >= 0) registers[dest_reg] = num >> shift_amt;
+	//else duplicate sign bit
+	else registers[dest_reg] = (num >> shift_amt) | (0xFFFFFFFF << 32 - 1);
+}
+
+void sllv(uint32_t dest_reg, uint32_t op1, uint32_t op2, int32_t (&registers)[32]){
+	registers[dest_reg] = registers[op2] << registers[op1];
+}
+
+void srlv(uint32_t dest_reg, uint32_t op1, uint32_t op2, int32_t (&registers)[32]){
+	registers[dest_reg] = registers[op2] >> registers[op1];
+}
+
+void srav(uint32_t dest_reg, uint32_t op1, uint32_t op2, int32_t (&registers)[32]){
+	int32_t num = registers[op2];
+	int32_t shift_amt = registers[op1];
+	//if num is positive, operation is same as srl
+	if (num >= 0) registers[dest_reg] = num >> shift_amt;
+	//else duplicate sign bit
+	else registers[dest_reg] = (num >> shift_amt) | (0xFFFFFFFF << 32 - 1);
+}
+
+void jr(vector <uint32_t> &instructions, uint8_t* data, uint32_t src_reg, int32_t (&registers)[32], uint32_t& pc, int32_t (&HiLo)[2]){
+	pc++;
+	execute(instructions, data, registers, pc, HiLo);
+	if (src_reg != 0 && registers[src_reg] != 0) pc = (registers[src_reg] / 4) - 1;
+	else pc = instructions.size() - 1;
+}
+
+void jalr(vector <uint32_t> &instructions, uint8_t* data, uint32_t src_reg, uint32_t dest_reg, int32_t (&registers)[32], uint32_t& pc, int32_t (&HiLo)[2]){
+	//save return address
+	registers[dest_reg] = pc + 2;
+	//execute jr
+	jr(instructions, data, src_reg, registers, pc, HiLo);
+}
+
+void mfhi(uint32_t dest_reg, int32_t (&registers)[32], int32_t HI){
+	registers[dest_reg] = HI;
+}
+
+void mthi(uint32_t src_reg, int32_t (&registers)[32], int32_t (&HiLo)[2]){
+	HiLo[0] = registers[src_reg];
+}
+
+void mflo(uint32_t dest_reg, int32_t (&registers)[32], int32_t LO){
+	registers[dest_reg] = LO;
+}
+
+void mtlo(uint32_t src_reg, int32_t (&registers)[32], int32_t (&HiLo)[2]){
+	HiLo[1] = registers[src_reg];
+}
 
 void add(uint32_t dest_reg, uint32_t op1, uint32_t op2, int32_t (&registers)[32]){
 	int32_t source1 = registers[op1];
@@ -364,12 +410,32 @@ void add(uint32_t dest_reg, uint32_t op1, uint32_t op2, int32_t (&registers)[32]
 	else registers[dest_reg] =  sum2;
 }
 
-void sll(uint32_t dest_reg, uint32_t op, uint32_t shift_amt, int32_t (&registers)[32]){
-	int64_t result = registers[op] << shift_amt;
-	int32_t result2 = registers[op] << shift_amt;
-	//check overflow
-	if (result != result2) exit (-10);
-	else registers[dest_reg] = result2;
+void AND(uint32_t dest_reg, uint32_t op1, uint32_t op2, int32_t (&registers)[32]){
+	registers[dest_reg] = registers[op1] & registers[op2];
+}
+
+void OR(uint32_t dest_reg, uint32_t op1, uint32_t op2, int32_t (&registers)[32]){
+	registers[dest_reg] = registers[op1] | registers[op2];
+}
+
+void XOR(uint32_t dest_reg, uint32_t op1, uint32_t op2, int32_t (&registers)[32]){
+	registers[dest_reg] = registers[op1] ^ registers[op2];
+}
+
+void NOR(uint32_t dest_reg, uint32_t op1, uint32_t op2, int32_t (&registers)[32]){
+	registers[dest_reg] = ~(registers[op1] | registers[op2]);
+}
+
+void slt(uint32_t dest_reg, uint32_t op1, uint32_t op2, int32_t (&registers)[32]){
+	if (registers[op1] < registers[op2]) registers[dest_reg] = 1;
+	else registers[dest_reg] = 0;
+}
+
+void sltu(uint32_t dest_reg, uint32_t op1, uint32_t op2, int32_t (&registers)[32]){
+	uint32_t a = registers[op1];
+	uint32_t b = registers[op2];
+	if (a < b) registers[dest_reg] = 1;
+	else registers[dest_reg] = 0;
 }
 
 
