@@ -8,8 +8,7 @@
 #include "constants.hpp"
 #include "functions.hpp"
 
-int main(int argc, char* argv[])
-{
+int main(int argc, char* argv[]){
 	//initialize memory space
 	//instruction memory as vector
 	vector<uint32_t> instructions;
@@ -58,7 +57,7 @@ int main(int argc, char* argv[])
   exit(-10);
 }
 
-uint32_t bin_string_to_int(string input) {
+uint32_t bin_string_to_int(string input){
 	uint32_t x = 0;
 	for (uint32_t i = 0; i < 32; i++) {
 		if (input[i] == '1'){
@@ -117,13 +116,23 @@ void execute(vector <uint32_t> &instructions, uint8_t* data, int32_t (&registers
 	//check if J type
 	else if (opcode == 2 || opcode == 3){
 		//execute
-		execute_J(instr, data, registers, opcode, pc);
+		execute_J(instr, data, registers, opcode, pc, instructions, HiLo);
 	}
 	//further decode and (eventually) execute
 	else execute_I(instr, data, registers, opcode);
 }
 
-void execute_J(uint32_t instr, uint8_t* data, int32_t (&registers)[32], uint8_t& opcode, uint32_t& pc) {
+void execute_J(uint32_t instr, uint8_t* data, int32_t (&registers)[32], uint8_t& opcode, uint32_t& pc, vector<uint32_t> &instructions, int32_t (&HiLo)[2]) {
+	//Jump (J)
+	if (opcode == 2){ 
+		j(instructions, data, registers, pc, HiLo);
+	}
+	//Jump and Link (JAL)
+	else if (opcode == 3){
+		jal(instructions, data, registers, pc, HiLo);
+	}
+	//invalid instruction
+	else exit(-12);
 }
 
 void execute_R(uint32_t instr, uint8_t* data, int32_t (&registers)[32], uint32_t& pc, vector<uint32_t> &instructions, int32_t (&HiLo)[2]) {
@@ -158,6 +167,8 @@ void execute_R(uint32_t instr, uint8_t* data, int32_t (&registers)[32], uint32_t
 			case 9:		// jalr rd, rs 		001001
 			 	jalr(instructions, data, op1, dest_reg, registers, pc, HiLo);
 			 	break;
+			//invalid instruction
+			default: exit(-12);
 		}
 	}
 
@@ -173,21 +184,23 @@ void execute_R(uint32_t instr, uint8_t* data, int32_t (&registers)[32], uint32_t
 			case 18: 	//mflo 	rd 			010010
 				mflo(dest_reg, registers, HiLo[1]);
 			 	break;
-			case 19:	//mtlo 	rs 				010011
+			case 19:	//mtlo 	rs 			010011
 			 	mtlo(op1, registers, HiLo);
 			 	break;
-			// case 24:	//mult 	rs, rt 			011000
-			// 	mult(---);
-			// 	break;
-			// case 25: 	//multu rs, rt 		011001
-			// 	multu(---);
-			// 	break;
-			// case 26: 	//div 	rs, rt 		011010
-			// 	div(---);
-			// 	break;
-			// case 27: 	//divu 	rs, rt 		011011
-			// 	divu(---);
-			// 	break;
+			case 24:	//mult 	rs, rt 		011000
+			 	mult(op1, op2, registers, HiLo);
+			 	break;
+			case 25: 	//multu rs, rt 		011001
+			 	multu(op1, op2, registers, HiLo);
+			 	break;
+			case 26: 	//div 	rs, rt 		011010
+			 	div(op1, op2, registers, HiLo);
+			 	break;
+			case 27: 	//divu 	rs, rt 		011011
+			 	divu(op1, op2, registers, HiLo);
+			 	break;
+			//invalid instruction
+			default: exit(-12);				 
 		}
 	}
 
@@ -197,15 +210,15 @@ void execute_R(uint32_t instr, uint8_t* data, int32_t (&registers)[32], uint32_t
 			case 32:	//add 	rd, rs, rt 	100000
 				add(dest_reg, op1, op2, registers);
 				break;
-			// case 33:	//addu 	rd, rs, rt 	100001
-			// 	addu(---);
-			// 	break;
-			// case 34:	//sub 	rd, rs, rt 	100010
-			// 	sub(---);
-			// 	break;
-			// case 35:	//subu 	rd, rs, rt 	100011
-			// 	subu(---);
-			// 	break;
+			case 33:	//addu 	rd, rs, rt 	100001
+			 	addu(dest_reg, op1, op2, registers);
+			 	break;
+			case 34:	//sub 	rd, rs, rt 	100010
+			 	sub(dest_reg, op1, op2, registers);
+			 	break;
+			case 35:	//subu 	rd, rs, rt 	100011
+			 	subu(dest_reg, op1, op2, registers);
+			 	break;
 			case 36:	//and 	rd, rs, rt 	100100
 				AND(dest_reg, op1, op2, registers);
 			 	break;
@@ -224,6 +237,8 @@ void execute_R(uint32_t instr, uint8_t* data, int32_t (&registers)[32], uint32_t
 			case 43: //sltu 	rd, rs, rt 	101011
 			 	sltu(dest_reg, op1, op2, registers);
 			 	break;
+			//invalid instruction
+			default: exit(-12);				 
 		}
 	}
 }
@@ -282,6 +297,8 @@ void execute_I (uint32_t instr, uint8_t* data, int32_t (&registers)[32], uint8_t
 			case 15:	// lui 		rt, imm 			001111
 				lui(dest_reg, immediate, registers); 
 				break;
+			//invalid instruction
+			default: exit(-12);
 		}
 	}
 
@@ -294,6 +311,9 @@ void execute_I (uint32_t instr, uint8_t* data, int32_t (&registers)[32], uint8_t
 			// case 33:	//lh 	rt, imm(rs) 	100001
 			// 	lh(---);
 			// 	break;
+			// case 34:	//lwl	rt, imm(rs)		100010
+			//	lwl(---);
+			//	break;
 			// case 35:	//lw 	rt, imm(rs) 	100011
 			// 	lw(---);
 			// 	break;
@@ -302,6 +322,9 @@ void execute_I (uint32_t instr, uint8_t* data, int32_t (&registers)[32], uint8_t
 			// 	break;
 			// case 37:	//lhu 	rt, imm(rs) 	100101 
 			// 	lhu(---);
+			// 	break;
+			// case 38:	//lwr 	rt, imm(rs) 	100110 
+			// 	lwr(---);
 			// 	break;
 			case 40:	//sb 	rt, imm(rs) 	101000
 				sb(registers[src_reg] + immediate, data, registers[dest_reg]);
@@ -312,6 +335,8 @@ void execute_I (uint32_t instr, uint8_t* data, int32_t (&registers)[32], uint8_t
 			case 43:	//sw 	rt, imm(rs) 	101011
 				sw(registers[src_reg] + immediate, data, registers[dest_reg]);
 				break;
+			//invalid instruction
+			default: exit(-12);
 		}
 	}	
 }
@@ -400,6 +425,44 @@ void mtlo(uint32_t src_reg, int32_t (&registers)[32], int32_t (&HiLo)[2]){
 	HiLo[1] = registers[src_reg];
 }
 
+void mult(uint32_t op1, uint32_t op2, int32_t (&registers)[32], int32_t (&HiLo)[2]){
+	int64_t product = registers[op1] * registers[op2];
+	//put higher word in HI and lower word in LO
+	HiLo[0] = product >> 32;
+	HiLo[1] = product & 0x0000FFFF;
+}
+
+void multu(uint32_t op1, uint32_t op2, int32_t (&registers)[32], int32_t (&HiLo)[2]){
+	uint64_t product = (uint32_t)registers[op1] * (uint32_t)registers[op2];
+	//put higher word in HI and lower word in LO
+	HiLo[0] = product >> 32;
+	HiLo[1] = product & 0x0000FFFF;
+}
+
+void div(uint32_t op1, uint32_t op2, int32_t (&registers)[32], int32_t (&HiLo)[2]){
+	int32_t dividend = registers[op1];
+	int32_t divisor = registers[op2];
+	//division by 0 --> arithmetic exception
+	//if (divisor == 0) exit(-10);
+	int32_t rem = dividend % divisor;
+	int32_t quot = (dividend - rem) / divisor;
+	//store quotient in LO and remainder in HI
+	HiLo[0] = rem;
+	HiLo[1] = quot;
+}
+
+void divu(uint32_t op1, uint32_t op2, int32_t (&registers)[32], int32_t (&HiLo)[2]){
+	uint32_t dividend = registers[op1];
+	uint32_t divisor = registers[op2];
+	//division by 0 --> arithmetic exception
+	//if (divisor == 0) exit(-10);
+	uint32_t rem = dividend % divisor;
+	uint32_t quot = (dividend - rem) / divisor;
+	//store quotient in LO and remainder in HI
+	HiLo[0] = rem;
+	HiLo[1] = quot;
+}
+
 void add(uint32_t dest_reg, uint32_t op1, uint32_t op2, int32_t (&registers)[32]){
 	int32_t source1 = registers[op1];
 	int32_t source2 = registers[op2];
@@ -408,6 +471,26 @@ void add(uint32_t dest_reg, uint32_t op1, uint32_t op2, int32_t (&registers)[32]
 	int32_t sum2 = source1 + source2;
 	if (sum != sum2) exit(-10);
 	else registers[dest_reg] =  sum2;
+}
+
+void addu(uint32_t dest_reg, uint32_t op1, uint32_t op2, int32_t (&registers)[32]){
+	registers[dest_reg] = registers[op1] + registers[op2];
+}
+
+void sub(uint32_t dest_reg, uint32_t op1, uint32_t op2, int32_t (&registers)[32]){
+	//sub same as add with 2's complement
+	int32_t source1 = registers[op1];
+	//get 2's complement of op2
+	int32_t source2 = ~(registers[op2]) + 1;
+	int64_t diff = source1 + source2;
+	//check for signed/unsigned overflow
+	int32_t diff2 = source1 + source2;
+	if (diff != diff2) exit(-10);
+	else registers[dest_reg] =  diff2;
+}
+
+void subu(uint32_t dest_reg, uint32_t op1, uint32_t op2, int32_t (&registers)[32]){
+	registers[dest_reg] = registers[op1] - registers[op2];
 }
 
 void AND(uint32_t dest_reg, uint32_t op1, uint32_t op2, int32_t (&registers)[32]){
@@ -491,4 +574,24 @@ void sw(uint32_t address, uint8_t* data, int32_t value){
 	sh(address, data, lower_half);
 	higher_half = (value & 0xFFFF0000) >> 16;
 	sh(address + 2, data, higher_half);
+}
+
+
+
+//////J TYPE INSTRUCTIONS///////
+
+void j(vector <uint32_t> &instructions, uint8_t* data, int32_t (&registers)[32], uint32_t& pc, int32_t (&HiLo)[2]){
+	uint32_t instr = instructions[pc];
+	uint32_t instr_index = (instr << 6) >> 6;
+	pc++;
+	execute(instructions, data, registers, pc, HiLo);
+	uint32_t temp = pc << 2;
+	pc = (((temp & 0xF0000000) + (instr_index << 2)) >> 2) - 1;
+}
+
+void jal(vector <uint32_t> &instructions, uint8_t* data, int32_t (&registers)[32], uint32_t& pc, int32_t (&HiLo)[2]){
+	//link return address in register 31
+	registers[31]  = pc + 2;
+	//execute normal j
+	j (instructions, data, registers, pc, HiLo);
 }
