@@ -45,7 +45,6 @@ int main(int argc, char* argv[])
 
 	//execute instructions
 	while (pc < instructions.size()){
-		cout << "executing" << endl;
 		execute(instructions, data, registers, pc);
 		pc+=1;
 	}
@@ -100,7 +99,6 @@ int32_t read_mem_s(uint32_t address, uint8_t* data){
 }
 
 void execute(vector <uint32_t> &instructions, uint8_t* data, int32_t (&registers)[32], uint32_t& pc) {
-	cout << "enter execute" << endl;
 	uint32_t instr = instructions[pc];
 	//decode instruction and call correct subfunction
 	//isolate opcode
@@ -230,9 +228,9 @@ void execute_R(uint32_t instr, uint8_t* data, int32_t (&registers)[32], uint32_t
 }
 
 void execute_I (uint32_t instr, uint8_t* data, int32_t (&registers)[32], uint8_t &opcode){
-	int32_t dest_reg, src_reg, immediate;
+	uint32_t dest_reg, src_reg;
+	int32_t immediate;
 	decode_fields_I(dest_reg, src_reg, immediate, instr);
-
 
 	//filter 0x0_
 	if (opcode < 0x10){
@@ -326,7 +324,7 @@ void execute_I (uint32_t instr, uint8_t* data, int32_t (&registers)[32], uint8_t
 
 }
 
-void decode_fields_I (int32_t &dest_reg, int32_t &src_reg, int32_t& immediate, const int32_t &instruction){
+void decode_fields_I (uint32_t &dest_reg, uint32_t &src_reg, int32_t& immediate, const uint32_t &instruction){
 	dest_reg = (instruction << 11) >> 27;
 	src_reg = (instruction << 6) >> 27;
 	//for the immediate(16 bits long) sign extension is necessary
@@ -376,7 +374,7 @@ void sll(uint32_t dest_reg, uint32_t op, uint32_t shift_amt, int32_t (&registers
 
 //////I TYPE INSTRUCTIONS///////
 
-void addi(int32_t &dest_reg, int32_t &src_reg, int32_t &immediate, int32_t (&registers)[32]){
+void addi(uint32_t &dest_reg, uint32_t &src_reg, int32_t &immediate, int32_t (&registers)[32]){
 	int32_t source = registers[src_reg];
 	int64_t sum = source + immediate;
 	int32_t sum2 = source + immediate;
@@ -384,13 +382,11 @@ void addi(int32_t &dest_reg, int32_t &src_reg, int32_t &immediate, int32_t (&reg
 	else registers[dest_reg] = sum2;
 }
 
-void addiu(int32_t &dest_reg, int32_t &src_reg, int32_t &immediate, int32_t (&registers)[32]){
+void addiu(uint32_t &dest_reg, uint32_t &src_reg, int32_t &immediate, int32_t (&registers)[32]){
 	registers[dest_reg] = registers[src_reg] + immediate;
-	cout << "executing addiu" << endl;
 }
 
-void lui(int32_t &dest_reg, int32_t &immediate, int32_t (&registers)[32]){
-	cout << "executing lui" << endl;
+void lui(uint32_t &dest_reg, int32_t &immediate, int32_t (&registers)[32]){
 	registers[dest_reg] = immediate << 16;
 }
 
@@ -418,7 +414,6 @@ void sh(uint32_t address, uint8_t* data, int32_t value){
 }
 
 void sw(uint32_t address, uint8_t* data, int32_t value){
-	cout << "executing sw" << endl;
 	if (address % 4 != 0) exit(-11);
 	int32_t lower_half, higher_half;
 	lower_half = value & 0x0000FFFF;
