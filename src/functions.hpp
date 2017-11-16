@@ -16,6 +16,9 @@ void sra(uint32_t dest_reg, uint32_t op, uint32_t shift_amt, int32_t (&registers
 void sll(uint32_t dest_reg, uint32_t op1, uint32_t op2, int32_t (&registers)[32]);
 void srl(uint32_t dest_reg, uint32_t op1, uint32_t op2, int32_t (&registers)[32]);
 void sra(uint32_t dest_reg, uint32_t op1, uint32_t op2, int32_t (&registers)[32]);
+void sllv(uint32_t dest_reg, uint32_t op1, uint32_t op2, int32_t (&registers)[32]);
+void srlv(uint32_t dest_reg, uint32_t op1, uint32_t op2, int32_t (&registers)[32]);
+void srav(uint32_t dest_reg, uint32_t op1, uint32_t op2, int32_t (&registers)[32]);
 void jr(vector <uint32_t> &instructions, uint8_t* data, uint32_t src_reg, int32_t (&registers)[32], uint32_t& pc, int32_t (&HiLo)[2]);
 void jalr(vector <uint32_t> &instructions, uint8_t* data, uint32_t src_reg, uint32_t dest_reg, int32_t (&registers)[32], uint32_t& pc, int32_t (&HiLo)[2]);
 void mfhi(uint32_t dest_reg, int32_t (&registers)[32], int32_t HI);
@@ -40,7 +43,11 @@ void sltu(uint32_t dest_reg, uint32_t op1, uint32_t op2, int32_t (&registers)[32
 //I type instructions
 void addi(uint32_t &dest_reg, uint32_t &src_reg, int32_t &immediate, int32_t (&registers)[32]);
 void addiu(uint32_t &dest_reg, uint32_t &src_reg, int32_t &immediate, int32_t (&registers)[32]);
+void ori(uint32_t &dest_reg, uint32_t &src_reg, int32_t &immediate, int32_t (&registers)[32]);
 void lui(uint32_t &dest_reg, int32_t &immediate, int32_t (&registers)[32]);
+void lb(uint32_t address, uint8_t* data, uint32_t dest_reg, int32_t (&registers)[32]);
+void lh(uint32_t address, uint8_t* data, uint32_t dest_reg, int32_t (&registers)[32]);
+void lw(uint32_t address, uint8_t* data, uint32_t dest_reg, int32_t (&registers)[32]);
 void sb(uint32_t address, uint8_t* data, uint8_t value);
 void sh(uint32_t address, uint8_t* data, int32_t value);
 void sw(uint32_t address, uint8_t* data, int32_t value);
