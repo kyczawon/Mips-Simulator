@@ -41,7 +41,7 @@ int main(int argc, char* argv[]){
 	string input;
 	int32_t offset = ADDR_INSTR;
 	while (infile >> input) {
-		uint32_t x = bin_string_to_int(input);
+		uint32_t x = bin_string_to_uint32_t(input);
 		instructions.push_back(x);
 	}
 
@@ -57,7 +57,7 @@ int main(int argc, char* argv[]){
   exit(-10);
 }
 
-uint32_t bin_string_to_int(string input){
+uint32_t bin_string_to_uint32_t(string input) {
 	uint32_t x = 0;
 	for (uint32_t i = 0; i < 32; i++) {
 		if (input[i] == '1'){
@@ -244,9 +244,9 @@ void execute_R(uint32_t instr, uint8_t* data, int32_t (&registers)[32], uint32_t
 }
 
 void execute_I (uint32_t instr, uint8_t* data, int32_t (&registers)[32], uint8_t &opcode){
-	int32_t dest_reg, src_reg, immediate;
+	uint32_t dest_reg, src_reg;
+	int32_t immediate;
 	decode_fields_I(dest_reg, src_reg, immediate, instr);
-
 
 	//filter 0x0_
 	if (opcode < 0x10){
@@ -341,7 +341,7 @@ void execute_I (uint32_t instr, uint8_t* data, int32_t (&registers)[32], uint8_t
 	}	
 }
 
-void decode_fields_I (int32_t &dest_reg, int32_t &src_reg, int32_t& immediate, const int32_t &instruction){
+void decode_fields_I (uint32_t &dest_reg, uint32_t &src_reg, int32_t& immediate, const uint32_t &instruction){
 	dest_reg = (instruction << 11) >> 27;
 	src_reg = (instruction << 6) >> 27;
 	//for the immediate(16 bits long) sign extension is necessary
@@ -525,7 +525,7 @@ void sltu(uint32_t dest_reg, uint32_t op1, uint32_t op2, int32_t (&registers)[32
 
 //////I TYPE INSTRUCTIONS///////
 
-void addi(int32_t &dest_reg, int32_t &src_reg, int32_t &immediate, int32_t (&registers)[32]){
+void addi(uint32_t &dest_reg, uint32_t &src_reg, int32_t &immediate, int32_t (&registers)[32]){
 	int32_t source = registers[src_reg];
 	int64_t sum = source + immediate;
 	int32_t sum2 = source + immediate;
@@ -533,13 +533,11 @@ void addi(int32_t &dest_reg, int32_t &src_reg, int32_t &immediate, int32_t (&reg
 	else registers[dest_reg] = sum2;
 }
 
-void addiu(int32_t &dest_reg, int32_t &src_reg, int32_t &immediate, int32_t (&registers)[32]){
+void addiu(uint32_t &dest_reg, uint32_t &src_reg, int32_t &immediate, int32_t (&registers)[32]){
 	registers[dest_reg] = registers[src_reg] + immediate;
-	cout << "executing addiu" << endl;
 }
 
-void lui(int32_t &dest_reg, int32_t &immediate, int32_t (&registers)[32]){
-	cout << "executing lui" << endl;
+void lui(uint32_t &dest_reg, int32_t &immediate, int32_t (&registers)[32]){
 	registers[dest_reg] = immediate << 16;
 }
 
@@ -550,9 +548,10 @@ void sb(uint32_t address, uint8_t* data, uint8_t value){
 		data[address - ADDR_DATA] = value;
 	}
 	//else check if instruction is trying to write ADDR_PUTC location
-	else if (address > 0x30000003 && address < 0x30000008){
-		cout << unsigned(value) << endl;
+	else if (address == 0x30000004){
+		cout << (char) value << endl;
 	}
+	else if (address > 0x30000004 && address < 0x30000008) return;
 	//otherwise return error code
 	else exit(-11);
 }
@@ -567,7 +566,6 @@ void sh(uint32_t address, uint8_t* data, int32_t value){
 }
 
 void sw(uint32_t address, uint8_t* data, int32_t value){
-	cout << "executing sw" << endl;
 	if (address % 4 != 0) exit(-11);
 	int32_t lower_half, higher_half;
 	lower_half = value & 0x0000FFFF;
