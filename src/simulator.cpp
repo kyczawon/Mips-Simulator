@@ -39,7 +39,7 @@ int main(int argc, char* argv[])
 	string input;
 	int32_t offset = ADDR_INSTR;
 	while (infile >> input) {
-		uint32_t x = bin_string_to_int(input);
+		uint32_t x = bin_string_to_uint32_t(input);
 		instructions.push_back(x);
 	}
 
@@ -52,7 +52,7 @@ int main(int argc, char* argv[])
   exit(-10);
 }
 
-uint32_t bin_string_to_int(string input) {
+uint32_t bin_string_to_uint32_t(string input) {
 	uint32_t x = 0;
 	for (uint32_t i = 0; i < 32; i++) {
 		if (input[i] == '1'){
@@ -397,9 +397,10 @@ void sb(uint32_t address, uint8_t* data, uint8_t value){
 		data[address - ADDR_DATA] = value;
 	}
 	//else check if instruction is trying to write ADDR_PUTC location
-	else if (address > 0x30000003 && address < 0x30000008){
-		cout << unsigned(value) << endl;
+	else if (address == 0x30000004){
+		cout << (char) value << endl;
 	}
+	else if (address > 0x30000004 && address < 0x30000008) return;
 	//otherwise return error code
 	else exit(-11);
 }
