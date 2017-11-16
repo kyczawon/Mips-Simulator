@@ -23,4 +23,4 @@ void sh(uint32_t address, uint8_t* data, int32_t value);
 void sw(uint32_t address, uint8_t* data, int32_t value);
 
 //helper functions
-uint32_t bin_string_to_int(string input);
+uint32_t bin_string_to_uint32_t(string input);

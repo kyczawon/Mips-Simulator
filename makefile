@@ -37,8 +37,8 @@ MIPS_LDFLAGS += -Wl,--build-id=none
 
 # Build the simulation binary
 bin/mips_simulator : src/simulator.cpp src/functions.cpp
-	mkdir -p
-	g++ -W -Wall src/simulator.cpp  bin/mips_simulator
+	mkdir -p bin
+	g++ -W -Wall src/simulator.cpp  -o bin/mips_simulator
 	# g++ -W -Wall -c -std=c++11 src/simulator.cpp
 	# g++ -W -Wall -c -std=c++11 src/functions.cpp
 	# g++ simulator.o functions.o -o bin/mips_simulator
@@ -49,6 +49,9 @@ simulator : bin/mips_simulator
 ###################################################
 ## Testbench
 
-testbench :
-	echo "No testbench yet"
-	exit 1
+bin/mips_testbench : test/testbench.cpp
+	mkdir -p /testbench
+	g++ -W -Wall test/testbench.cpp -o bin/mips_testbench
+
+# In order to comply with spec
+testbench : bin/mips_testbench

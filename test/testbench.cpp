@@ -14,14 +14,14 @@ int main(int argc, char* argv[])
     ofstream binary;
     ifstream instructions;
 
-    string instructions_name = "testbench/instructions.txt";
+    string instructions_name = "test/instructions.txt";
     instructions.open(instructions_name.c_str());
     if (!instructions.is_open()) {
         cout << "Instructions file not found" << endl;
         exit(EXIT_FAILURE);
     }
 
-    string binary_name = "testbench/binary.bin";
+    string binary_name = "test/temp/binary.bin";
     binary.open(binary_name.c_str());
     if (!binary.is_open()) {
         cout << "binary file could not be created" << endl;
@@ -29,8 +29,8 @@ int main(int argc, char* argv[])
     }
 
     //load instructions in the format inst | name | input1 | input2 | result 
-    string instr, instr_name, input1, input2, result;
-    while (instructions >> instr >> instr_name >> input1 >> input2 >> result) {
+    string instr, instr_name, input1, input2, expected_result;
+    while (instructions >> instr >> instr_name >> input1 >> input2 >> expected_result) {
         //convert input to int
         int value = stoi(input1);
         int value2 = stoi(input2);
@@ -55,6 +55,11 @@ int main(int argc, char* argv[])
         ss << "10101100010100100000000000000100" << endl;
         binary << ss.str();
     }
+    try {
+        int expected_result_int = stoi(expected_result);
+    } catch (...) {
+        cout << "instruction is missing the expected result" << endl;
+    }
     instructions.close();
     binary.close();
     
@@ -63,7 +68,7 @@ int main(int argc, char* argv[])
 
 }
 
-uint32_t get_simulator_output() {
+int get_simulator_output() {
     FILE *fp;
     int status;
     char output[PATH_MAX];
@@ -71,23 +76,34 @@ uint32_t get_simulator_output() {
     char buffer [100];
     int cx;
 
-    fp = popen("bin/mips_simulator testbench/binary.bin", "r");
+    fp = popen("bin/mips_simulator test/temp/binary.bin", "r");
 
     /* Handle error */;
     if (fp == NULL) {
         cout << "error" << endl;
     }
 
+    int result = 0;
+    int count = 0;
     stringstream ss;
     while (fgets(output, PATH_MAX, fp) != NULL) {
+        // if (count < 3) {
+        //     result += (uint8_t) *output * pow(2, count);
+        // } else if (count <4) {
+        //     result += (int8_t) *output * pow(2, count);
+        // }
         ss << output;
     }
 
-    string str = ss.str();
+    cout << ss.str();
 
-    str.erase(remove(str.begin(), str.end(), '\n'), str.end());
+    // int test_id = 0;
 
-    cout << str << endl;
+    // if (result == expected_result)
+
+    // cout << test_id << " , " << instr << " , " << 
+
+    // TestId , Instruction , Status , Author [, Message]
 
     status = pclose(fp);
     if (status == -1) {
