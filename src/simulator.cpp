@@ -254,8 +254,8 @@ void execute_I (uint32_t instr, uint8_t* data, int32_t (&registers)[32], uint8_t
 			// 	andi(---); 
 			// 	break;
 			case 13:	// ori 	rt, rs, imm 			001101
-				ori(dest_reg, src_reg, immediate, registers);
-				break;
+			 	ori(dest_reg, src_reg, immediate, registers);
+			 	break;
 			// case 14:	// xori 	rt, rs, imm 		001110 
 			// 	xori(---);
 			// 	break;
@@ -270,18 +270,18 @@ void execute_I (uint32_t instr, uint8_t* data, int32_t (&registers)[32], uint8_t
 	//filter 0x2_
 	else if (opcode < 0x30){
 		switch(opcode){
-			// case 32:	//lb 	rt, imm(rs) 	100000
-			// 	lb(---);
-			// 	break;
-			// case 33:	//lh 	rt, imm(rs) 	100001
-			// 	lh(---);
-			// 	break;
+			case 32:	//lb 	rt, imm(rs) 	100000
+			 	lb (registers[src_reg] + immediate, data, dest_reg, registers);
+			 	break;
+			case 33:	//lh 	rt, imm(rs) 	100001
+			 	lh(registers[src_reg] + immediate, data, dest_reg, registers);
+			 	break;
 			// case 34:	//lwl	rt, imm(rs)		100010
 			//	lwl(---);
 			//	break;
-			// case 35:	//lw 	rt, imm(rs) 	100011
-			// 	lw(---);
-			// 	break;
+			case 35:	//lw 	rt, imm(rs) 	100011
+			 	lw(registers[src_reg] + immediate, data, dest_reg, registers);
+			 	break;
 			// case 36:	//lbu 	rt, imm(rs) 	100100
 			// 	lbu(---);
 			// 	break;
@@ -346,7 +346,7 @@ void sra(uint32_t dest_reg, uint32_t op, uint32_t shift_amt, int32_t (&registers
 	//if num is positive, operation is same as srl
 	if (num >= 0) registers[dest_reg] = num >> shift_amt;
 	//else duplicate sign bit
-	else registers[dest_reg] = (num >> shift_amt) | (0xFFFFFFFF << 32 - 1);
+	else registers[dest_reg] = (num >> shift_amt) | (0xFFFFFFFF << (32 - shift_amt));
 }
 
 void sllv(uint32_t dest_reg, uint32_t op1, uint32_t op2, int32_t (&registers)[32]){
@@ -520,6 +520,77 @@ void ori(uint32_t &dest_reg, uint32_t &src_reg, int32_t &immediate, int32_t (&re
 
 void lui(uint32_t &dest_reg, int32_t &immediate, int32_t (&registers)[32]){
 	registers[dest_reg] = immediate << 16;
+}
+
+void lb(uint32_t address, uint8_t* data, uint32_t dest_reg, int32_t (&registers)[32]){
+		//check if mem to be accessed is between correct bounds for data space
+	if (address >= ADDR_DATA && address < ADDR_DATA + DATA_SIZE){
+		//remove data offset and read
+		int32_t temp = data[address - ADDR_DATA];
+		//check if sign extension is needed
+		if (temp >= 0) registers[dest_reg] = temp;
+		else registers[dest_reg] = temp | 0xFFFF0000;
+	}
+	//else check if instruction is trying to read ADDR_GETC location
+	else if (address == 0x30000000){
+		//read from keyboard
+		cin >> registers[dest_reg];
+	}
+	//if other ADDR_GETC locations don't to anything
+	else if (address > 0x30000000 && address < 0x30000004) return;
+	//otherwise return error code
+	else exit(-11);
+}
+
+void lh(uint32_t address, uint8_t* data, uint32_t dest_reg, int32_t (&registers)[32]){
+	//check for address alignment
+	if (address % 2 != 0) exit(-11);
+	//check if mem to be accessed is between correct bounds for data space
+	if (address >= ADDR_DATA && address < ADDR_DATA + DATA_SIZE){
+		//remove offset to address
+		address = address - ADDR_DATA;
+		//load lower byte
+		int32_t temp = 0 | (uint32_t)data[address];
+		//load higher byte
+		temp = temp | (uint32_t)(data[address + 1] << 8);
+		//check if sign extension is needed
+		if (temp >= 0) registers[dest_reg] = temp;
+		else registers[dest_reg] = temp | 0xFFFF0000;
+	}
+	//else check if instruction is trying to read ADDR_GETC location
+	else if (address == 0x30000000){
+		//read from keyboard
+		cin >> registers[dest_reg];
+	}
+	//if other ADDR_GETC locations don't to anything
+	else if (address == 0x30000002) return;
+	//otherwise return error code
+	else exit(-11);
+
+}
+
+void lw(uint32_t address, uint8_t* data, uint32_t dest_reg, int32_t (&registers)[32]){
+	//check for address alignment
+	if (address % 4 != 0) exit(-11);
+	//check if mem to be accessed is between correct bounds for data space
+	if (address >= ADDR_DATA && address < ADDR_DATA + DATA_SIZE){
+		//remove offset to address
+		address -= ADDR_DATA;
+		//load lowest byte
+		registers[dest_reg] = (uint32_t)data[address];
+		//load higher bytes
+		for (int x = 1; x < 4; x++){
+			registers[dest_reg] = registers[dest_reg] | (uint32_t)(data[address + x] << (8 * x));
+		}
+	}
+	//else check if instruction is trying to read ADDR_GETC location
+	else if (address == 0x30000000){
+		//read from keyboard
+		cin >> registers[dest_reg];
+	}
+	//otherwise return error code
+	else exit(-11);
+
 }
 
 void sb(uint32_t address, uint8_t* data, uint8_t value){
