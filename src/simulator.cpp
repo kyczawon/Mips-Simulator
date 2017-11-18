@@ -2,13 +2,18 @@
 #include <fstream>
 #include <vector>
 #include <string>
+#include <cstring>
 #include <stdint.h>
 #include <cmath>
 #include <iostream>
 #include "constants.hpp"
 #include "functions.hpp"
+bool debug_mode;
 
 int main(int argc, char* argv[]){
+    //debug mode
+	if (argc > 2) debug_mode = (strcmp(argv[1], "d"));
+
 	//initialize memory space
 	//instruction memory as vector
 	vector<uint32_t> instructions;
@@ -45,11 +50,8 @@ int main(int argc, char* argv[]){
 		instructions.push_back(x);
 	}
 
-
-
 	//execute instructions
 	while (pc < instructions.size()){
-		cout << "executing" << endl;
 		execute(instructions, data, registers, pc, HiLo);
 		pc+=1;
 	}
@@ -68,7 +70,6 @@ uint32_t bin_string_to_uint32_t(string input) {
 }
 
 void execute(vector <uint32_t> &instructions, uint8_t* data, int32_t (&registers)[32], uint32_t& pc, int32_t (&HiLo)[2]) {
-	cout << "enter execute" << endl;
 	uint32_t instr = instructions[pc];
 	//decode instruction and call correct subfunction
 	//isolate opcode
@@ -259,7 +260,7 @@ void execute_I (uint32_t instr, uint8_t* data, int32_t (&registers)[32], uint8_t
 			// 	xori(---);
 			// 	break;
 			case 15:	// lui 		rt, imm 			001111
-				lui(dest_reg, immediate, registers); 
+				lui(dest_reg, immediate, registers);
 				break;
 			//invalid instruction
 			default: exit(-12);
@@ -291,7 +292,13 @@ void execute_I (uint32_t instr, uint8_t* data, int32_t (&registers)[32], uint8_t
 			// 	lwr(---);
 			// 	break;
 			case 40:	//sb 	rt, imm(rs) 	101000
-				sb(registers[src_reg] + immediate, data, registers[dest_reg]);
+				{
+				int test = registers[dest_reg] & 0x0000FF;
+				char test2 = (char) test;
+				int test3 = (int) test2;
+				if (debug_mode) cout << "test2: " << test2 << "test3: " << test3 << endl; 
+				sb(registers[src_reg] + immediate, data, registers[dest_reg] & 0x0000FF);
+				}
 				break;
 			case 41:	//sh 	rt, imm(rs) 	101001
 				sh(registers[src_reg] + immediate, data, registers[dest_reg]);
@@ -445,12 +452,17 @@ void sub(uint32_t dest_reg, uint32_t op1, uint32_t op2, int32_t (&registers)[32]
 	//sub same as add with 2's complement
 	int32_t source1 = registers[op1];
 	//get 2's complement of op2
-	int32_t source2 = ~(registers[op2]) + 1;
-	int64_t diff = source1 + source2;
+	int32_t source2 = registers[op2];
+
+	int64_t diff = source1 - source2;
 	//check for signed/unsigned overflow
-	int32_t diff2 = source1 + source2;
+	int32_t diff2 = source1 - source2;
+
+	if (debug_mode) cout<< source1 << "-" << source2 << " = " << diff2 << endl;
 	if (diff != diff2) exit(-10);
-	else registers[dest_reg] =  diff2;
+	else{
+		registers[dest_reg] =  diff2;
+	}
 }
 
 void subu(uint32_t dest_reg, uint32_t op1, uint32_t op2, int32_t (&registers)[32]){
@@ -502,6 +514,7 @@ void addiu(uint32_t &dest_reg, uint32_t &src_reg, int32_t &immediate, int32_t (&
 }
 
 void ori(uint32_t &dest_reg, uint32_t &src_reg, int32_t &immediate, int32_t (&registers)[32]){
+	immediate = immediate & 0x0000FFFF;
 	registers[dest_reg] = registers[src_reg] | immediate;
 }
 
@@ -598,7 +611,7 @@ void sb(uint32_t address, uint8_t* data, uint8_t value){
 void sh(uint32_t address, uint8_t* data, int32_t value){
 	if (address % 2 != 0) exit(-11);
 	uint8_t lower_byte, higher_byte;
-	lower_byte = value & 0x000000FF;
+	lower_byte = (uint8_t) value & 0x000000FF;
 	sb(address, data, lower_byte);
 	higher_byte = (value & 0x0000FF00) >> 8;
 	sb(address++, data, higher_byte);
