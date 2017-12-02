@@ -222,7 +222,8 @@ void execute_I (uint32_t instr, uint8_t* data, int32_t (&registers)[32], uint8_t
 			//	// bltzal	re, label	000001
 			//	else if (dest_reg == 16) bltzal(---);
 			//	// bgezal	rs, ladel	000001
-			//	else if (dest reg == 17) bgezal(---);
+			//	else if (dest reg == 17) 
+			//	bgezal(---);
 			// 	break;
 			// case 4:		// beq	rs, rt, label 		000100 
 			// 	beq(---);
@@ -286,9 +287,9 @@ void execute_I (uint32_t instr, uint8_t* data, int32_t (&registers)[32], uint8_t
 			case 37:	//lhu 	rt, imm(rs) 	100101 
 			 	lhu(registers[src_reg] + immediate, data, dest_reg, registers);
 			 	break;
-			// case 38:	//lwr 	rt, imm(rs) 	100110 
-			// 	lwr(---);
-			// 	break;
+			case 38:	//lwr 	rt, imm(rs) 	100110 
+			 	lwr(registers[src_reg] + immediate, data, dest_reg, registers);
+			 	break;
 			case 40:	//sb 	rt, imm(rs) 	101000
 				sb(registers[src_reg] + immediate, data, registers[dest_reg] & 0x0000FF);
 				break;
@@ -578,7 +579,6 @@ void lh(uint32_t address, uint8_t* data, uint32_t dest_reg, int32_t (&registers)
 	else exit(-11);
 
 }
-
 
 void lwl(uint32_t address, uint8_t* data, uint32_t dest_reg, int32_t (&registers)[32]){
 	//check if mem to be accessed is between correct bounds for data space
