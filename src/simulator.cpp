@@ -483,8 +483,8 @@ void slt(uint32_t dest_reg, uint32_t op1, uint32_t op2, int32_t (&registers)[32]
 }
 
 void sltu(uint32_t dest_reg, uint32_t op1, uint32_t op2, int32_t (&registers)[32]){
-	uint32_t a = (uint32_t)registers[op1];
-	uint32_t b = (uint32_t)registers[op2];
+	uint32_t a = (uint32_t) registers[op1];
+	uint32_t b = (uint32_t) registers[op2];
 	if (a < b) registers[dest_reg] = 1;
 	else registers[dest_reg] = 0;
 }
@@ -569,7 +569,8 @@ void lh(uint32_t address, uint8_t* data, uint32_t dest_reg, int32_t (&registers)
 
 }
 
-void lwl(int32_t address, uint8_t* data, uint32_t dest_reg, int32_t (&registers)[32]){
+
+void lwl(uint32_t address, uint8_t* data, uint32_t dest_reg, int32_t (&registers)[32]){
 	//check if mem to be accessed is between correct bounds for data space
 	if (!(address >= ADDR_DATA && address < ADDR_DATA + DATA_SIZE)) exit(-11);
 	//infer unalignment from address
