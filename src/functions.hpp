@@ -51,6 +51,7 @@ void lwl(uint32_t address, uint8_t* data, uint32_t dest_reg, int32_t (&registers
 void lw(uint32_t address, uint8_t* data, uint32_t dest_reg, int32_t (&registers)[32]);
 void lbu(uint32_t address, uint8_t* data, uint32_t dest_reg, int32_t (&registers)[32]);
 void lhu(uint32_t address, uint8_t* data, uint32_t dest_reg, int32_t (&registers)[32]);
+void lwr(int32_t address, uint8_t* data, uint32_t dest_reg, int32_t (&registers)[32]);
 void sb(uint32_t address, uint8_t* data, uint8_t value);
 void sh(uint32_t address, uint8_t* data, int32_t value);
 void sw(uint32_t address, uint8_t* data, int32_t value);
