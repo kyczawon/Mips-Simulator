@@ -2,13 +2,17 @@
 #include <fstream>
 #include <vector>
 #include <string>
+#include <cstring>
 #include <stdint.h>
 #include <cmath>
 #include <iostream>
 #include "constants.hpp"
 #include "functions.hpp"
+bool debug_mode;
 
 int main(int argc, char* argv[]){
+	//debug mode
+	if (argc == 3) debug_mode = (strcmp(argv[2],"-d")==0);
 	//initialize memory space
 	//instruction memory as vector
 	vector<uint32_t> instructions;
@@ -37,7 +41,6 @@ int main(int argc, char* argv[]){
 	}
 
 	//load instructions from Binary file into correct location in RAM 
-	//each instruction is loaded into 4 separate bytes
 	string input;
 	int32_t offset = ADDR_INSTR;
 	while (infile >> input) {
@@ -45,16 +48,13 @@ int main(int argc, char* argv[]){
 		instructions.push_back(x);
 	}
 
-
-
 	//execute instructions
 	while (pc < instructions.size()){
-		cout << "executing" << endl;
 		execute(instructions, data, registers, pc, HiLo);
 		pc+=1;
 	}
-
-  exit(-10);
+	uint8_t exit_result = registers[3]; ///////////////////////////////////////////////////// corect?
+  exit(exit_result);
 }
 
 uint32_t bin_string_to_uint32_t(string input) {
@@ -68,7 +68,6 @@ uint32_t bin_string_to_uint32_t(string input) {
 }
 
 void execute(vector <uint32_t> &instructions, uint8_t* data, int32_t (&registers)[32], uint32_t& pc, int32_t (&HiLo)[2]) {
-	cout << "enter execute" << endl;
 	uint32_t instr = instructions[pc];
 	//decode instruction and call correct subfunction
 	//isolate opcode
@@ -259,7 +258,7 @@ void execute_I (uint32_t instr, uint8_t* data, int32_t (&registers)[32], uint8_t
 			 	xori(dest_reg, src_reg, immediate, registers);
 			 	break;
 			case 15:	// lui 		rt, imm 			001111
-				lui(dest_reg, immediate, registers); 
+				lui(dest_reg, immediate, registers);
 				break;
 			//invalid instruction
 			default: exit(-12);
@@ -270,7 +269,7 @@ void execute_I (uint32_t instr, uint8_t* data, int32_t (&registers)[32], uint8_t
 	else if (opcode < 0x30){
 		switch(opcode){
 			case 32:	//lb 	rt, imm(rs) 	100000
-			 	lb (registers[src_reg] + immediate, data, dest_reg, registers);
+			 	lb(registers[src_reg] + immediate, data, dest_reg, registers);
 			 	break;
 			case 33:	//lh 	rt, imm(rs) 	100001
 			 	lh(registers[src_reg] + immediate, data, dest_reg, registers);
@@ -291,7 +290,7 @@ void execute_I (uint32_t instr, uint8_t* data, int32_t (&registers)[32], uint8_t
 			// 	lwr(---);
 			// 	break;
 			case 40:	//sb 	rt, imm(rs) 	101000
-				sb(registers[src_reg] + immediate, data, registers[dest_reg]);
+				sb(registers[src_reg] + immediate, data, registers[dest_reg] & 0x0000FF);
 				break;
 			case 41:	//sh 	rt, imm(rs) 	101001
 				sh(registers[src_reg] + immediate, data, registers[dest_reg]);
@@ -330,8 +329,8 @@ void sll(uint32_t dest_reg, uint32_t op, uint32_t shift_amt, int32_t (&registers
 	registers[dest_reg] = registers[op] << shift_amt;
 }
 
-void srl(uint32_t dest_reg, uint32_t op, uint32_t shift_amt, int32_t (&registers)[32]){
-	registers[dest_reg] = registers[op] >> shift_amt;
+void srl(uint32_t dest_reg, uint32_t op, uint32_t shift_amt, int32_t (&registers)[32]){ ////////////////////////////had do cast first
+	registers[dest_reg] = ((uint32_t) registers[op]) >> shift_amt;
 }
 
 void sra(uint32_t dest_reg, uint32_t op, uint32_t shift_amt, int32_t (&registers)[32]){
@@ -347,7 +346,7 @@ void sllv(uint32_t dest_reg, uint32_t op1, uint32_t op2, int32_t (&registers)[32
 }
 
 void srlv(uint32_t dest_reg, uint32_t op1, uint32_t op2, int32_t (&registers)[32]){
-	registers[dest_reg] = registers[op2] >> registers[op1];
+	registers[dest_reg] = ((uint32_t) registers[op2]) >> registers[op1];
 }
 
 void srav(uint32_t dest_reg, uint32_t op1, uint32_t op2, int32_t (&registers)[32]){
@@ -445,12 +444,17 @@ void sub(uint32_t dest_reg, uint32_t op1, uint32_t op2, int32_t (&registers)[32]
 	//sub same as add with 2's complement
 	int32_t source1 = registers[op1];
 	//get 2's complement of op2
-	int32_t source2 = ~(registers[op2]) + 1;
-	int64_t diff = source1 + source2;
+	int32_t source2 = registers[op2];
+
+	int64_t diff = source1 - source2;
 	//check for signed/unsigned overflow
-	int32_t diff2 = source1 + source2;
+	int32_t diff2 = source1 - source2;
+
+	if (debug_mode) cout<< source1 << "-" << source2 << " = " << diff2 << endl;
 	if (diff != diff2) exit(-10);
-	else registers[dest_reg] =  diff2;
+	else{
+		registers[dest_reg] =  diff2;
+	}
 }
 
 void subu(uint32_t dest_reg, uint32_t op1, uint32_t op2, int32_t (&registers)[32]){
@@ -506,6 +510,7 @@ void andi(uint32_t &dest_reg, uint32_t &src_reg, int32_t &immediate, int32_t (&r
 }
 
 void ori(uint32_t &dest_reg, uint32_t &src_reg, int32_t &immediate, int32_t (&registers)[32]){
+	immediate = immediate & 0x0000FFFF;
 	registers[dest_reg] = registers[src_reg] | immediate;
 }
 
@@ -590,9 +595,12 @@ void lw(uint32_t address, uint8_t* data, uint32_t dest_reg, int32_t (&registers)
 		address -= ADDR_DATA;
 		//load lowest byte
 		registers[dest_reg] = (uint32_t)data[address];
+		if (debug_mode) cout << "address" << ": " << (uint32_t)data[address] << endl;
 		//load higher bytes
 		for (int x = 1; x < 4; x++){
-			registers[dest_reg] = registers[dest_reg] | (uint32_t)(data[address + x] << (8 * x));
+			if (debug_mode) cout << "address +" << x << ": " << (uint32_t)data[address + x] << endl;
+			if (debug_mode) cout << "registers[dest_reg] value: " << registers[dest_reg] << endl;
+			registers[dest_reg] = registers[dest_reg] | (int32_t)(data[address + x] << (8 * x));
 		}
 	}
 	//else check if instruction is trying to read ADDR_GETC location
@@ -653,6 +661,7 @@ void sb(uint32_t address, uint8_t* data, uint8_t value){
 	if (address >= ADDR_DATA && address < ADDR_DATA + DATA_SIZE){
 		//remove data offset and write
 		data[address - ADDR_DATA] = value;
+		if (debug_mode) cout << "value: " << (uint32_t) value << endl;
 	}
 	//else check if instruction is trying to write ADDR_PUTC location
 	else if (address == 0x30000004){
@@ -666,13 +675,14 @@ void sb(uint32_t address, uint8_t* data, uint8_t value){
 void sh(uint32_t address, uint8_t* data, int32_t value){
 	if (address % 2 != 0) exit(-11);
 	uint8_t lower_byte, higher_byte;
-	lower_byte = value & 0x000000FF;
+	lower_byte = (uint8_t) value & 0x000000FF;
 	sb(address, data, lower_byte);
 	higher_byte = (value & 0x0000FF00) >> 8;
-	sb(address++, data, higher_byte);
+	sb(++address, data, higher_byte);
 }
 
 void sw(uint32_t address, uint8_t* data, int32_t value){
+	if (debug_mode) cout << "sw value: " << value << endl;
 	if (address % 4 != 0) exit(-11);
 	int32_t lower_half, higher_half;
 	lower_half = value & 0x0000FFFF;
