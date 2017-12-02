@@ -242,12 +242,12 @@ void execute_I (uint32_t instr, uint8_t* data, int32_t (&registers)[32], uint8_t
 			case 9:		// addiu 	rt, rs, imm 		001001
 				addiu(dest_reg, src_reg, immediate, registers); 
 				break;
-			// case 10:	// slti 	rt, rs, imm 		001010 
-			// 	slti(---);
-			// 	break;
-			// case 11:	// sltiu 	rt, rs, imm 		001011
-			// 	sltiu(---);
-			// 	break;
+			case 10:	// slti 	rt, rs, imm 		001010 
+			 	slti(dest_reg, src_reg, immediate, registers);
+			 	break;
+			case 11:	// sltiu 	rt, rs, imm 		001011
+			 	sltiu(dest_reg, src_reg, immediate, registers);
+			 	break;
 			case 12:	// andi 	rt, rs, imm 		001100
 			 	andi(dest_reg, src_reg, immediate, registers); 
 			 	break;
@@ -503,6 +503,16 @@ void addi(uint32_t &dest_reg, uint32_t &src_reg, int32_t &immediate, int32_t (&r
 
 void addiu(uint32_t &dest_reg, uint32_t &src_reg, int32_t &immediate, int32_t (&registers)[32]){
 	registers[dest_reg] = registers[src_reg] + immediate;
+}
+
+void slti(uint32_t &dest_reg, uint32_t &src_reg, int32_t &immediate, int32_t (&registers)[32]){
+	if (registers[src_reg] < immediate) registers[dest_reg] = 1;
+	else registers[dest_reg] = 0;
+}
+
+void sltiu(uint32_t &dest_reg, uint32_t &src_reg, int32_t &immediate, int32_t (&registers)[32]){
+	if ((uint32_t)registers[src_reg] < (uint32_t)immediate) registers[dest_reg] = 1;
+	else registers[dest_reg] = 0;
 }
 
 void andi(uint32_t &dest_reg, uint32_t &src_reg, int32_t &immediate, int32_t (&registers)[32]){
