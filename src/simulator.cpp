@@ -249,15 +249,15 @@ void execute_I (uint32_t instr, uint8_t* data, int32_t (&registers)[32], uint8_t
 			// case 11:	// sltiu 	rt, rs, imm 		001011
 			// 	sltiu(---);
 			// 	break;
-			// case 12:	// andi 	rt, rs, imm 		001100
-			// 	andi(---); 
-			// 	break;
+			case 12:	// andi 	rt, rs, imm 		001100
+			 	andi(dest_reg, src_reg, immediate, registers); 
+			 	break;
 			case 13:	// ori 	rt, rs, imm 			001101
 			 	ori(dest_reg, src_reg, immediate, registers);
 			 	break;
-			// case 14:	// xori 	rt, rs, imm 		001110 
-			// 	xori(---);
-			// 	break;
+			case 14:	// xori 	rt, rs, imm 		001110 
+			 	xori(dest_reg, src_reg, immediate, registers);
+			 	break;
 			case 15:	// lui 		rt, imm 			001111
 				lui(dest_reg, immediate, registers); 
 				break;
@@ -281,12 +281,12 @@ void execute_I (uint32_t instr, uint8_t* data, int32_t (&registers)[32], uint8_t
 			case 35:	//lw 	rt, imm(rs) 	100011
 			 	lw(registers[src_reg] + immediate, data, dest_reg, registers);
 			 	break;
-			// case 36:	//lbu 	rt, imm(rs) 	100100
-			// 	lbu(---);
-			// 	break;
-			// case 37:	//lhu 	rt, imm(rs) 	100101 
-			// 	lhu(---);
-			// 	break;
+			case 36:	//lbu 	rt, imm(rs) 	100100
+			 	lbu(registers[src_reg] + immediate, data, dest_reg, registers);
+			 	break;
+			case 37:	//lhu 	rt, imm(rs) 	100101 
+			 	lhu(registers[src_reg] + immediate, data, dest_reg, registers);
+			 	break;
 			// case 38:	//lwr 	rt, imm(rs) 	100110 
 			// 	lwr(---);
 			// 	break;
@@ -501,8 +501,16 @@ void addiu(uint32_t &dest_reg, uint32_t &src_reg, int32_t &immediate, int32_t (&
 	registers[dest_reg] = registers[src_reg] + immediate;
 }
 
+void andi(uint32_t &dest_reg, uint32_t &src_reg, int32_t &immediate, int32_t (&registers)[32]){
+	registers[dest_reg] = registers[src_reg] & immediate;
+}
+
 void ori(uint32_t &dest_reg, uint32_t &src_reg, int32_t &immediate, int32_t (&registers)[32]){
 	registers[dest_reg] = registers[src_reg] | immediate;
+}
+
+void xori(uint32_t &dest_reg, uint32_t &src_reg, int32_t &immediate, int32_t (&registers)[32]){
+	registers[dest_reg] = registers[src_reg] ^ immediate;
 }
 
 void lui(uint32_t &dest_reg, int32_t &immediate, int32_t (&registers)[32]){
@@ -535,7 +543,7 @@ void lh(uint32_t address, uint8_t* data, uint32_t dest_reg, int32_t (&registers)
 	//check if mem to be accessed is between correct bounds for data space
 	if (address >= ADDR_DATA && address < ADDR_DATA + DATA_SIZE){
 		//remove offset to address
-		address = address - ADDR_DATA;
+		address -= ADDR_DATA;
 		//load lower byte
 		int32_t temp = 0 | (uint32_t)data[address];
 		//load higher byte
@@ -554,6 +562,23 @@ void lh(uint32_t address, uint8_t* data, uint32_t dest_reg, int32_t (&registers)
 	//otherwise return error code
 	else exit(-11);
 
+}
+
+void lwl(int32_t address, uint8_t* data, uint32_t dest_reg, int32_t (&registers)[32]){
+	//infer unalignment from address
+	uint32_t unalignment = 4 - (address % 4);
+	//if no unalignment execute normal load word
+	if (unalignment == 4){
+		lw(address, data, dest_reg, registers);
+		return;
+	}
+	//apply offset to address
+	address -= ADDR_DATA;
+	//load unaligned data
+	int32_t 
+	for(int x = 0; x < unalignment; x++){
+		int32_t temp
+	}
 }
 
 void lw(uint32_t address, uint8_t* data, uint32_t dest_reg, int32_t (&registers)[32]){
@@ -575,6 +600,49 @@ void lw(uint32_t address, uint8_t* data, uint32_t dest_reg, int32_t (&registers)
 		//read from keyboard
 		cin >> registers[dest_reg];
 	}
+	//otherwise return error code
+	else exit(-11);
+
+}
+
+void lbu(uint32_t address, uint8_t* data, uint32_t dest_reg, int32_t (&registers)[32]){
+		//check if mem to be accessed is between correct bounds for data space
+	if (address >= ADDR_DATA && address < ADDR_DATA + DATA_SIZE){
+		//remove data offset and read
+		uint32_t temp = data[address - ADDR_DATA];
+		registers[dest_reg] = temp & 0x000000FF;
+	}
+	//else check if instruction is trying to read ADDR_GETC location
+	else if (address == 0x30000000){
+		//read from keyboard
+		cin >> (uint32_t)registers[dest_reg];
+	}
+	//if other ADDR_GETC locations don't to anything
+	else if (address > 0x30000000 && address < 0x30000004) return;
+	//otherwise return error code
+	else exit(-11);
+}
+
+void lhu(uint32_t address, uint8_t* data, uint32_t dest_reg, int32_t (&registers)[32]){
+	//check for address alignment
+	if (address % 2 != 0) exit(-11);
+	//check if mem to be accessed is between correct bounds for data space
+	if (address >= ADDR_DATA && address < ADDR_DATA + DATA_SIZE){
+		//remove offset to address
+		address = address - ADDR_DATA;
+		//load lower byte
+		int32_t temp = 0 | (uint32_t)data[address];
+		//load higher byte
+		temp = temp | (uint32_t)(data[address + 1] << 8);
+		registers[dest_reg] = temp & 0x0000FFFF;
+	}
+	//else check if instruction is trying to read ADDR_GETC location
+	else if (address == 0x30000000){
+		//read from keyboard
+		cin >> registers[dest_reg];
+	}
+	//if other ADDR_GETC locations don't to anything
+	else if (address == 0x30000002) return;
 	//otherwise return error code
 	else exit(-11);
 
