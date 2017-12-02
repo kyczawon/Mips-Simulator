@@ -11,9 +11,8 @@
 bool debug_mode;
 
 int main(int argc, char* argv[]){
-    //debug mode
-	if (argc > 2) debug_mode = (strcmp(argv[1], "d"));
-
+	//debug mode
+	if (argc == 3) debug_mode = (strcmp(argv[2],"-d")==0);
 	//initialize memory space
 	//instruction memory as vector
 	vector<uint32_t> instructions;
@@ -42,7 +41,6 @@ int main(int argc, char* argv[]){
 	}
 
 	//load instructions from Binary file into correct location in RAM 
-	//each instruction is loaded into 4 separate bytes
 	string input;
 	int32_t offset = ADDR_INSTR;
 	while (infile >> input) {
@@ -55,8 +53,8 @@ int main(int argc, char* argv[]){
 		execute(instructions, data, registers, pc, HiLo);
 		pc+=1;
 	}
-
-  exit(-10);
+	uint8_t exit_result = registers[3]; ///////////////////////////////////////////////////// corect?
+  exit(exit_result);
 }
 
 uint32_t bin_string_to_uint32_t(string input) {
@@ -271,7 +269,7 @@ void execute_I (uint32_t instr, uint8_t* data, int32_t (&registers)[32], uint8_t
 	else if (opcode < 0x30){
 		switch(opcode){
 			case 32:	//lb 	rt, imm(rs) 	100000
-			 	lb (registers[src_reg] + immediate, data, dest_reg, registers);
+			 	lb(registers[src_reg] + immediate, data, dest_reg, registers);
 			 	break;
 			case 33:	//lh 	rt, imm(rs) 	100001
 			 	lh(registers[src_reg] + immediate, data, dest_reg, registers);
@@ -292,13 +290,7 @@ void execute_I (uint32_t instr, uint8_t* data, int32_t (&registers)[32], uint8_t
 			// 	lwr(---);
 			// 	break;
 			case 40:	//sb 	rt, imm(rs) 	101000
-				{
-				int test = registers[dest_reg] & 0x0000FF;
-				char test2 = (char) test;
-				int test3 = (int) test2;
-				if (debug_mode) cout << "test2: " << test2 << "test3: " << test3 << endl; 
 				sb(registers[src_reg] + immediate, data, registers[dest_reg] & 0x0000FF);
-				}
 				break;
 			case 41:	//sh 	rt, imm(rs) 	101001
 				sh(registers[src_reg] + immediate, data, registers[dest_reg]);
@@ -337,8 +329,8 @@ void sll(uint32_t dest_reg, uint32_t op, uint32_t shift_amt, int32_t (&registers
 	registers[dest_reg] = registers[op] << shift_amt;
 }
 
-void srl(uint32_t dest_reg, uint32_t op, uint32_t shift_amt, int32_t (&registers)[32]){
-	registers[dest_reg] = registers[op] >> shift_amt;
+void srl(uint32_t dest_reg, uint32_t op, uint32_t shift_amt, int32_t (&registers)[32]){ ////////////////////////////had do cast first
+	registers[dest_reg] = ((uint32_t) registers[op]) >> shift_amt;
 }
 
 void sra(uint32_t dest_reg, uint32_t op, uint32_t shift_amt, int32_t (&registers)[32]){
@@ -354,7 +346,7 @@ void sllv(uint32_t dest_reg, uint32_t op1, uint32_t op2, int32_t (&registers)[32
 }
 
 void srlv(uint32_t dest_reg, uint32_t op1, uint32_t op2, int32_t (&registers)[32]){
-	registers[dest_reg] = registers[op2] >> registers[op1];
+	registers[dest_reg] = ((uint32_t) registers[op2]) >> registers[op1];
 }
 
 void srav(uint32_t dest_reg, uint32_t op1, uint32_t op2, int32_t (&registers)[32]){
@@ -578,9 +570,12 @@ void lw(uint32_t address, uint8_t* data, uint32_t dest_reg, int32_t (&registers)
 		address -= ADDR_DATA;
 		//load lowest byte
 		registers[dest_reg] = (uint32_t)data[address];
+		if (debug_mode) cout << "address" << ": " << (uint32_t)data[address] << endl;
 		//load higher bytes
 		for (int x = 1; x < 4; x++){
-			registers[dest_reg] = registers[dest_reg] | (uint32_t)(data[address + x] << (8 * x));
+			if (debug_mode) cout << "address +" << x << ": " << (uint32_t)data[address + x] << endl;
+			if (debug_mode) cout << "registers[dest_reg] value: " << registers[dest_reg] << endl;
+			registers[dest_reg] = registers[dest_reg] | (int32_t)(data[address + x] << (8 * x));
 		}
 	}
 	//else check if instruction is trying to read ADDR_GETC location
@@ -598,6 +593,7 @@ void sb(uint32_t address, uint8_t* data, uint8_t value){
 	if (address >= ADDR_DATA && address < ADDR_DATA + DATA_SIZE){
 		//remove data offset and write
 		data[address - ADDR_DATA] = value;
+		if (debug_mode) cout << "value: " << (uint32_t) value << endl;
 	}
 	//else check if instruction is trying to write ADDR_PUTC location
 	else if (address == 0x30000004){
@@ -614,10 +610,11 @@ void sh(uint32_t address, uint8_t* data, int32_t value){
 	lower_byte = (uint8_t) value & 0x000000FF;
 	sb(address, data, lower_byte);
 	higher_byte = (value & 0x0000FF00) >> 8;
-	sb(address++, data, higher_byte);
+	sb(++address, data, higher_byte);
 }
 
 void sw(uint32_t address, uint8_t* data, int32_t value){
+	if (debug_mode) cout << "sw value: " << value << endl;
 	if (address % 4 != 0) exit(-11);
 	int32_t lower_half, higher_half;
 	lower_half = value & 0x0000FFFF;

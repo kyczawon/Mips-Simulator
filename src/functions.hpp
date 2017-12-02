@@ -10,12 +10,10 @@ void decode_fields_R (uint32_t &op1, uint32_t &op2, uint32_t &dest_reg, uint32_t
 void decode_fields_I (uint32_t &dest_reg, uint32_t &src_reg, int32_t& immediate, const uint32_t &instruction);
 
 //R type instructions
+
 void sll(uint32_t dest_reg, uint32_t op, uint32_t shift_amt, int32_t (&registers)[32]);
 void srl(uint32_t dest_reg, uint32_t op, uint32_t shift_amt, int32_t (&registers)[32]);
 void sra(uint32_t dest_reg, uint32_t op, uint32_t shift_amt, int32_t (&registers)[32]);
-void sll(uint32_t dest_reg, uint32_t op1, uint32_t op2, int32_t (&registers)[32]);
-void srl(uint32_t dest_reg, uint32_t op1, uint32_t op2, int32_t (&registers)[32]);
-void sra(uint32_t dest_reg, uint32_t op1, uint32_t op2, int32_t (&registers)[32]);
 void sllv(uint32_t dest_reg, uint32_t op1, uint32_t op2, int32_t (&registers)[32]);
 void srlv(uint32_t dest_reg, uint32_t op1, uint32_t op2, int32_t (&registers)[32]);
 void srav(uint32_t dest_reg, uint32_t op1, uint32_t op2, int32_t (&registers)[32]);
