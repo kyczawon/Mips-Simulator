@@ -483,8 +483,8 @@ void slt(uint32_t dest_reg, uint32_t op1, uint32_t op2, int32_t (&registers)[32]
 }
 
 void sltu(uint32_t dest_reg, uint32_t op1, uint32_t op2, int32_t (&registers)[32]){
-	uint32_t a = registers[op1];
-	uint32_t b = registers[op2];
+	uint32_t a = (uint32_t) registers[op1];
+	uint32_t b = (uint32_t) registers[op2];
 	if (a < b) registers[dest_reg] = 1;
 	else registers[dest_reg] = 0;
 }
@@ -526,10 +526,10 @@ void lb(uint32_t address, uint8_t* data, uint32_t dest_reg, int32_t (&registers)
 		//check if mem to be accessed is between correct bounds for data space
 	if (address >= ADDR_DATA && address < ADDR_DATA + DATA_SIZE){
 		//remove data offset and read
-		int32_t temp = data[address - ADDR_DATA];
+		int8_t temp = data[address - ADDR_DATA];
 		//check if sign extension is needed
 		if (temp >= 0) registers[dest_reg] = temp;
-		else registers[dest_reg] = temp | 0xFFFF0000;
+		else registers[dest_reg] = (int32_t)temp;
 	}
 	//else check if instruction is trying to read ADDR_GETC location
 	else if (address == 0x30000000){
@@ -550,12 +550,12 @@ void lh(uint32_t address, uint8_t* data, uint32_t dest_reg, int32_t (&registers)
 		//remove offset to address
 		address -= ADDR_DATA;
 		//load higher byte
-		int32_t temp = 0 | ((uint32_t)data[address] << 8);
+		int16_t temp = 0 | ((uint16_t)data[address] << 8);
 		//load lower byte
-		temp = temp | (uint32_t)(data[address + 1]);
+		temp = temp | (uint16_t)(data[address + 1]);
 		//check if sign extension is needed
 		if (temp >= 0) registers[dest_reg] = temp;
-		else registers[dest_reg] = temp | 0xFFFF0000;
+		else registers[dest_reg] = (int32_t) temp;
 	}
 	//else check if instruction is trying to read ADDR_GETC location
 	else if (address == 0x30000000){
@@ -569,7 +569,7 @@ void lh(uint32_t address, uint8_t* data, uint32_t dest_reg, int32_t (&registers)
 
 }
 
-void lwl(int32_t address, uint8_t* data, uint32_t dest_reg, int32_t (&registers)[32]){
+void lwl(uint32_t address, uint8_t* data, uint32_t dest_reg, int32_t (&registers)[32]){
 	//infer unalignment from address
 	uint32_t unalignment = 4 - (address % 4);
 	//if no unalignment execute normal load word
@@ -582,7 +582,7 @@ void lwl(int32_t address, uint8_t* data, uint32_t dest_reg, int32_t (&registers)
 	//load unaligned data
 	uint32_t temp = 0x0;
 	for(int x = 0; x < unalignment; x++){
-		temp = temp | (data[address + x] << (8 * (3-x)));
+		temp = temp | ((uint32_t) data[address + x] << (8 * (3-x)));
 	}
 }
 
