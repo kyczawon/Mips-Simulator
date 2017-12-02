@@ -24,8 +24,9 @@ int main(int argc, char* argv[])
         exit(EXIT_FAILURE);
     }
 
-    test_R_and_I(test_id, debug_mode, output);
+    // test_R_and_I(test_id, debug_mode, output);
     // test_sl(test_id, debug_mode, output);
+    test_muldiv(test_id, debug_mode, output);
 
 }
 
@@ -196,6 +197,143 @@ void test_sl(int& test_id, bool debug_mode, ofstream& output){
             cout << test_id << ", " << instr_name << ", " << status << ", Alelo " << message.str() << endl;
             output << test_id++ << ", " << instr_name << ", " << status << ", Alelo " << message.str() << endl;
             
+        }
+        instructions.close();
+}
+
+void test_muldiv(int& test_id, bool debug_mode, ofstream& output){
+    ofstream binary;
+    ifstream instructions;
+    string instructions_name = "test/muldiv_instructions.txt";
+        instructions.open(instructions_name.c_str());
+        if (!instructions.is_open()) {
+            cout << "muldiv_instructions file not found" << endl;
+            exit(EXIT_FAILURE);
+        }
+
+        //load instructions in the format instr | name | input1 | input2 | result 
+        string instr, instr_name;
+        int input1, input2, expected_hi_result, expected_lo_result;
+        while (instructions >> instr >> instr_name >> input1 >> input2 >> expected_hi_result >> expected_lo_result) {
+
+            string binary_name = "test/temp/binary.bin";
+            binary.open(binary_name.c_str());
+            if (!binary.is_open()) {
+                cout << "binary file could not be created" << endl;
+                exit(EXIT_FAILURE);
+            }
+            //convert input as int to binary string
+            string input1_binary = int_to_bin(input1);
+            string input2_binary = int_to_bin(input2);
+            
+            stringstream ss;
+            //-----------initialize registers with required values-----------
+            //lui s1 - 16 most significant bits of input 1
+            ss << "0011110000010001" << input1_binary.substr(0, 16) << endl;
+            //ori s1 s1 - 16 least significant bits of input 1
+            ss << "0011011000110001" << input1_binary.substr(16, 32) << endl;
+            //lui s0 - 16 most significant bits of input 2
+            ss << "0011110000010000" << input2_binary.substr(0, 16) << endl;
+            //ori s0 s0 - 16 least significant bits of input 2
+            ss << "0011011000010000" << input2_binary.substr(16, 32) << endl;
+            //instruction to test
+            ss << "00000010000100010000000000" << instr << endl;
+
+            //mfhi s2
+            ss << "00000000000000001001000000010000" << endl;
+
+            //-----------put word s2 to output-----------
+            //lui v0 0x3000
+            ss << "00111100000000100011000000000000" << endl;
+            //sb s2 0x0004 v0
+            ss << "10100000010100100000000000000100" << endl;
+            //srl s2 s2 0x0008
+            ss << "00000000000100101001001000000010" << endl;
+            //sb s2 0x0004 v0
+            ss << "10100000010100100000000000000100" << endl;
+            //srl s2 s2 0x0008
+            ss << "00000000000100101001001000000010" << endl;
+            //sb s2 0x0004 v0
+            ss << "10100000010100100000000000000100" << endl;
+            //srl s2 s2 0x0008
+            ss << "00000000000100101001001000000010" << endl;
+            //sb s2 0x0004 v0
+            ss << "10100000010100100000000000000100" << endl;
+
+            binary << ss.str();
+            binary.close();
+            
+            int32_t result = get_simulator_output(debug_mode);
+
+            string status = "Fail";
+            stringstream message;
+            message << "[, " << input1 << " " << instr_name << " from high " << input2 << " expected: " << expected_hi_result << ", got: " << result << "]";
+
+            if (result == expected_hi_result) {
+                status = "Pass";
+            }
+
+            cout << test_id << ", " << instr_name << ", " << status << ", Alelo " << message.str() << endl;
+            output << test_id++ << ", " << instr_name << ", " << status << ", Alelo " << message.str() << endl;
+
+            binary.open(binary_name.c_str());
+            if (!binary.is_open()) {
+                cout << "binary file could not be created" << endl;
+                exit(EXIT_FAILURE);
+            }
+
+            ss.str( std::string() );
+            ss.clear();
+
+            //-----------initialize registers with required values-----------
+            //lui s1 - 16 most significant bits of input 1
+            ss << "0011110000010001" << input1_binary.substr(0, 16) << endl;
+            //ori s1 s1 - 16 least significant bits of input 1
+            ss << "0011011000110001" << input1_binary.substr(16, 32) << endl;
+            //lui s0 - 16 most significant bits of input 2
+            ss << "0011110000010000" << input2_binary.substr(0, 16) << endl;
+            //ori s0 s0 - 16 least significant bits of input 2
+            ss << "0011011000010000" << input2_binary.substr(16, 32) << endl;
+            //instruction to test
+            ss << "00000010000100010000000000" << instr << endl;
+
+            //mflo s2
+            ss << "00000000000000001001000000010010" << endl;
+            //-----------put word s2 to output-----------
+            //lui v0 0x3000
+            ss << "00111100000000100011000000000000" << endl;
+            //sb s2 0x0004 v0
+            ss << "10100000010100100000000000000100" << endl;
+            //srl s2 s2 0x0008
+            ss << "00000000000100101001001000000010" << endl;
+            //sb s2 0x0004 v0
+            ss << "10100000010100100000000000000100" << endl;
+            //srl s2 s2 0x0008
+            ss << "00000000000100101001001000000010" << endl;
+            //sb s2 0x0004 v0
+            ss << "10100000010100100000000000000100" << endl;
+            //srl s2 s2 0x0008
+            ss << "00000000000100101001001000000010" << endl;
+            //sb s2 0x0004 v0
+            ss << "10100000010100100000000000000100" << endl;
+            
+            binary << ss.str();
+            binary.close();
+            
+            result = get_simulator_output(debug_mode);
+
+            status = "Fail";
+            message.str( std::string() );
+            message.clear();
+            message << "[, " << input1 << " " << instr_name << " from low " << input2 << " expected: " << expected_lo_result << ", got: " << result << "]";
+
+            if (result == expected_lo_result) {
+                status = "Pass";
+            }
+
+            cout << test_id << ", " << instr_name << ", " << status << ", Alelo " << message.str() << endl;
+            output << test_id++ << ", " << instr_name << ", " << status << ", Alelo " << message.str() << endl;
+
         }
         instructions.close();
 }
