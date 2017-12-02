@@ -274,9 +274,9 @@ void execute_I (uint32_t instr, uint8_t* data, int32_t (&registers)[32], uint8_t
 			case 33:	//lh 	rt, imm(rs) 	100001
 			 	lh(registers[src_reg] + immediate, data, dest_reg, registers);
 			 	break;
-			// case 34:	//lwl	rt, imm(rs)		100010
-			//	lwl(---);
-			//	break;
+			case 34:	//lwl	rt, imm(rs)		100010
+				lwl(registers[src_reg] + immediate, data, dest_reg, registers);
+				break;
 			case 35:	//lw 	rt, imm(rs) 	100011
 			 	lw(registers[src_reg] + immediate, data, dest_reg, registers);
 			 	break;
@@ -549,10 +549,10 @@ void lh(uint32_t address, uint8_t* data, uint32_t dest_reg, int32_t (&registers)
 	if (address >= ADDR_DATA && address < ADDR_DATA + DATA_SIZE){
 		//remove offset to address
 		address -= ADDR_DATA;
-		//load lower byte
-		int32_t temp = 0 | (uint32_t)data[address];
 		//load higher byte
-		temp = temp | (uint32_t)(data[address + 1] << 8);
+		int32_t temp = 0 | ((uint32_t)data[address] << 8);
+		//load lower byte
+		temp = temp | (uint32_t)(data[address + 1]);
 		//check if sign extension is needed
 		if (temp >= 0) registers[dest_reg] = temp;
 		else registers[dest_reg] = temp | 0xFFFF0000;
@@ -580,9 +580,9 @@ void lwl(int32_t address, uint8_t* data, uint32_t dest_reg, int32_t (&registers)
 	//apply offset to address
 	address -= ADDR_DATA;
 	//load unaligned data
-	int32_t 
+	uint32_t temp = 0x0;
 	for(int x = 0; x < unalignment; x++){
-		int32_t temp
+		temp = temp | (data[address + x] << (8 * (3-x)));
 	}
 }
 
@@ -593,14 +593,14 @@ void lw(uint32_t address, uint8_t* data, uint32_t dest_reg, int32_t (&registers)
 	if (address >= ADDR_DATA && address < ADDR_DATA + DATA_SIZE){
 		//remove offset to address
 		address -= ADDR_DATA;
-		//load lowest byte
-		registers[dest_reg] = (uint32_t)data[address];
+		//load highest byte
+		registers[dest_reg] = (uint32_t)data[address] << 24;
 		if (debug_mode) cout << "address" << ": " << (uint32_t)data[address] << endl;
-		//load higher bytes
+		//load lower bytes
 		for (int x = 1; x < 4; x++){
 			if (debug_mode) cout << "address +" << x << ": " << (uint32_t)data[address + x] << endl;
 			if (debug_mode) cout << "registers[dest_reg] value: " << registers[dest_reg] << endl;
-			registers[dest_reg] = registers[dest_reg] | (int32_t)(data[address + x] << (8 * x));
+			registers[dest_reg] = registers[dest_reg] | ((uint32_t)data[address + x] << (8 * (3 - x)));
 		}
 	}
 	//else check if instruction is trying to read ADDR_GETC location
@@ -623,7 +623,9 @@ void lbu(uint32_t address, uint8_t* data, uint32_t dest_reg, int32_t (&registers
 	//else check if instruction is trying to read ADDR_GETC location
 	else if (address == 0x30000000){
 		//read from keyboard
-		cin >> (uint32_t)registers[dest_reg];
+		uint32_t temp;
+		cin >> temp;
+		registers[dest_reg] = temp;
 	}
 	//if other ADDR_GETC locations don't to anything
 	else if (address > 0x30000000 && address < 0x30000004) return;
@@ -638,10 +640,10 @@ void lhu(uint32_t address, uint8_t* data, uint32_t dest_reg, int32_t (&registers
 	if (address >= ADDR_DATA && address < ADDR_DATA + DATA_SIZE){
 		//remove offset to address
 		address = address - ADDR_DATA;
-		//load lower byte
-		int32_t temp = 0 | (uint32_t)data[address];
 		//load higher byte
-		temp = temp | (uint32_t)(data[address + 1] << 8);
+		int32_t temp = 0 | ((uint32_t)data[address] << 8);
+		//load lower byte
+		temp = temp | (uint32_t)(data[address + 1]);
 		registers[dest_reg] = temp & 0x0000FFFF;
 	}
 	//else check if instruction is trying to read ADDR_GETC location
@@ -676,9 +678,9 @@ void sh(uint32_t address, uint8_t* data, int32_t value){
 	if (address % 2 != 0) exit(-11);
 	uint8_t lower_byte, higher_byte;
 	lower_byte = (uint8_t) value & 0x000000FF;
-	sb(address, data, lower_byte);
+	sb(address + 1, data, lower_byte);
 	higher_byte = (value & 0x0000FF00) >> 8;
-	sb(++address, data, higher_byte);
+	sb(address, data, higher_byte);
 }
 
 void sw(uint32_t address, uint8_t* data, int32_t value){
@@ -686,9 +688,9 @@ void sw(uint32_t address, uint8_t* data, int32_t value){
 	if (address % 4 != 0) exit(-11);
 	int32_t lower_half, higher_half;
 	lower_half = value & 0x0000FFFF;
-	sh(address, data, lower_half);
+	sh(address + 2, data, lower_half);
 	higher_half = (value & 0xFFFF0000) >> 16;
-	sh(address + 2, data, higher_half);
+	sh(address, data, higher_half);
 }
 
 
