@@ -41,6 +41,8 @@ void sltu(uint32_t dest_reg, uint32_t op1, uint32_t op2, int32_t (&registers)[32
 //I type instructions
 void addi(uint32_t &dest_reg, uint32_t &src_reg, int32_t &immediate, int32_t (&registers)[32]);
 void addiu(uint32_t &dest_reg, uint32_t &src_reg, int32_t &immediate, int32_t (&registers)[32]);
+void slti(uint32_t &dest_reg, uint32_t &src_reg, int32_t &immediate, int32_t (&registers)[32]);
+void sltiu(uint32_t &dest_reg, uint32_t &src_reg, int32_t &immediate, int32_t (&registers)[32]);
 void andi(uint32_t &dest_reg, uint32_t &src_reg, int32_t &immediate, int32_t (&registers)[32]);
 void ori(uint32_t &dest_reg, uint32_t &src_reg, int32_t &immediate, int32_t (&registers)[32]);
 void xori(uint32_t &dest_reg, uint32_t &src_reg, int32_t &immediate, int32_t (&registers)[32]);
@@ -51,6 +53,7 @@ void lwl(uint32_t address, uint8_t* data, uint32_t dest_reg, int32_t (&registers
 void lw(uint32_t address, uint8_t* data, uint32_t dest_reg, int32_t (&registers)[32]);
 void lbu(uint32_t address, uint8_t* data, uint32_t dest_reg, int32_t (&registers)[32]);
 void lhu(uint32_t address, uint8_t* data, uint32_t dest_reg, int32_t (&registers)[32]);
+void lwr(int32_t address, uint8_t* data, uint32_t dest_reg, int32_t (&registers)[32]);
 void sb(uint32_t address, uint8_t* data, uint8_t value);
 void sh(uint32_t address, uint8_t* data, int32_t value);
 void sw(uint32_t address, uint8_t* data, int32_t value);

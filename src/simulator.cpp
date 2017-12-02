@@ -222,7 +222,8 @@ void execute_I (uint32_t instr, uint8_t* data, int32_t (&registers)[32], uint8_t
 			//	// bltzal	re, label	000001
 			//	else if (dest_reg == 16) bltzal(---);
 			//	// bgezal	rs, ladel	000001
-			//	else if (dest reg == 17) bgezal(---);
+			//	else if (dest reg == 17) 
+			//	bgezal(---);
 			// 	break;
 			// case 4:		// beq	rs, rt, label 		000100 
 			// 	beq(---);
@@ -242,12 +243,12 @@ void execute_I (uint32_t instr, uint8_t* data, int32_t (&registers)[32], uint8_t
 			case 9:		// addiu 	rt, rs, imm 		001001
 				addiu(dest_reg, src_reg, immediate, registers); 
 				break;
-			// case 10:	// slti 	rt, rs, imm 		001010 
-			// 	slti(---);
-			// 	break;
-			// case 11:	// sltiu 	rt, rs, imm 		001011
-			// 	sltiu(---);
-			// 	break;
+			case 10:	// slti 	rt, rs, imm 		001010 
+			 	slti(dest_reg, src_reg, immediate, registers);
+			 	break;
+			case 11:	// sltiu 	rt, rs, imm 		001011
+			 	sltiu(dest_reg, src_reg, immediate, registers);
+			 	break;
 			case 12:	// andi 	rt, rs, imm 		001100
 			 	andi(dest_reg, src_reg, immediate, registers); 
 			 	break;
@@ -286,9 +287,9 @@ void execute_I (uint32_t instr, uint8_t* data, int32_t (&registers)[32], uint8_t
 			case 37:	//lhu 	rt, imm(rs) 	100101 
 			 	lhu(registers[src_reg] + immediate, data, dest_reg, registers);
 			 	break;
-			// case 38:	//lwr 	rt, imm(rs) 	100110 
-			// 	lwr(---);
-			// 	break;
+			case 38:	//lwr 	rt, imm(rs) 	100110 
+			 	lwr(registers[src_reg] + immediate, data, dest_reg, registers);
+			 	break;
 			case 40:	//sb 	rt, imm(rs) 	101000
 				sb(registers[src_reg] + immediate, data, registers[dest_reg] & 0x0000FF);
 				break;
@@ -512,6 +513,16 @@ void addiu(uint32_t &dest_reg, uint32_t &src_reg, int32_t &immediate, int32_t (&
 	registers[dest_reg] = registers[src_reg] + immediate;
 }
 
+void slti(uint32_t &dest_reg, uint32_t &src_reg, int32_t &immediate, int32_t (&registers)[32]){
+	if (registers[src_reg] < immediate) registers[dest_reg] = 1;
+	else registers[dest_reg] = 0;
+}
+
+void sltiu(uint32_t &dest_reg, uint32_t &src_reg, int32_t &immediate, int32_t (&registers)[32]){
+	if ((uint32_t)registers[src_reg] < (uint32_t)immediate) registers[dest_reg] = 1;
+	else registers[dest_reg] = 0;
+}
+
 void andi(uint32_t &dest_reg, uint32_t &src_reg, int32_t &immediate, int32_t (&registers)[32]){
 	registers[dest_reg] = registers[src_reg] & immediate;
 }
@@ -576,7 +587,6 @@ void lh(uint32_t address, uint8_t* data, uint32_t dest_reg, int32_t (&registers)
 
 }
 
-
 void lwl(uint32_t address, uint8_t* data, uint32_t dest_reg, int32_t (&registers)[32]){
 	//check if mem to be accessed is between correct bounds for data space
 	if (!(address >= ADDR_DATA && address < ADDR_DATA + DATA_SIZE)) exit(-11);
@@ -594,7 +604,7 @@ void lwl(uint32_t address, uint8_t* data, uint32_t dest_reg, int32_t (&registers
 	uint32_t past_val = registers[dest_reg];
 	for(int x = 0; x < unalignment; x++){
 		past_val = past_val & (0xFFFFFF00 << (8 * (3-x)));
-		temp = temp | (data[address + x] << (8 * (3-x)));
+		temp = temp | ((uint32_t)data[address + x] << (8 * (3-x)));
 	}
 	registers[dest_reg] = past_val | temp;
 	
@@ -672,24 +682,27 @@ void lhu(uint32_t address, uint8_t* data, uint32_t dest_reg, int32_t (&registers
 
 }
 
-// void lwr(int32_t address, uint8_t* data, uint32_t dest_reg, int32_t (&registers)[32]){
-// 	//check if mem to be accessed is between correct bounds for data space
-// 	if (!(address >= ADDR_DATA && address < ADDR_DATA + DATA_SIZE)) exit(-11);
-// 	//infer unalignment from address
-// 	uint32_t unalignment = (address % 4);
-// 	//if no unalignment execute normal load word
-// 	if (unalignment == 3){
-// 		lw(address, data, dest_reg, registers);
-// 		return;
-// 	}
-// 	//apply offset to address
-// 	address -= ADDR_DATA;
-// 	//load unaligned data
-// 	uint32_t temp = 0x0;
-// 	for(int x = 0; x <= unalignment; x++){
-// 		temp = temp | (data[address - x] << (8 * (3-x)));
-// 	}
-// }
+void lwr(int32_t address, uint8_t* data, uint32_t dest_reg, int32_t (&registers)[32]){
+	//check if mem to be accessed is between correct bounds for data space
+	if (!(address >= ADDR_DATA && address < ADDR_DATA + DATA_SIZE)) exit(-11);
+	//infer unalignment from address
+	uint32_t unalignment = address % 4;
+	//if no unalignment execute normal load word
+	if (unalignment == 3){
+		lw(address - 3, data, dest_reg, registers);
+		return;
+	}
+	//apply offset to address
+	address -= ADDR_DATA;
+	//load unaligned data
+	uint32_t temp = 0x0;
+	uint32_t past_val = registers[dest_reg];
+	for(int x = 0; x < unalignment; x++){
+		past_val = past_val & (0xFFFFFF00 << (8 * x));
+		temp = temp | ((uint32_t)data[address - x] << (8 * x));
+	}
+	registers[dest_reg] = past_val | temp;
+}
 
 void sb(uint32_t address, uint8_t* data, uint8_t value){
 		//check if mem to be accessed is between correct bounds for data space
