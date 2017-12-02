@@ -390,17 +390,24 @@ void mtlo(uint32_t src_reg, int32_t (&registers)[32], int32_t (&HiLo)[2]){
 }
 
 void mult(uint32_t op1, uint32_t op2, int32_t (&registers)[32], int32_t (&HiLo)[2]){
-	int64_t product = registers[op1] * registers[op2];
+	int64_t product = (int64_t) registers[op1] * (int64_t) registers[op2];
 	//put higher word in HI and lower word in LO
-	HiLo[0] = product >> 32;
-	HiLo[1] = product & 0x0000FFFF;
+	HiLo[1] = (int32_t) product;
+	HiLo[0] = (int32_t) (product >> 32);
+	
 }
 
 void multu(uint32_t op1, uint32_t op2, int32_t (&registers)[32], int32_t (&HiLo)[2]){
-	uint64_t product = (uint32_t)registers[op1] * (uint32_t)registers[op2];
+	if (debug_mode) cout << registers[op1] << endl;
+	if (debug_mode) cout << (uint64_t)((uint32_t)registers[op1]) << endl;
+	if (debug_mode) cout << (uint64_t)((uint32_t)registers[op2]) << endl;
+	uint64_t product = (uint64_t)((uint32_t)registers[op1]) * (uint64_t)((uint32_t)registers[op2]);
+	if (debug_mode) cout << product << endl;
 	//put higher word in HI and lower word in LO
-	HiLo[0] = product >> 32;
-	HiLo[1] = product & 0x0000FFFF;
+	HiLo[1] = (int32_t) product;
+	if (debug_mode) cout << HiLo[1] << endl;
+	HiLo[0] = (int32_t) (product >> 32);
+	if (debug_mode) cout << HiLo[0] << endl;
 }
 
 void div(uint32_t op1, uint32_t op2, int32_t (&registers)[32], int32_t (&HiLo)[2]){
