@@ -423,8 +423,8 @@ void div(uint32_t op1, uint32_t op2, int32_t (&registers)[32], int32_t (&HiLo)[2
 }
 
 void divu(uint32_t op1, uint32_t op2, int32_t (&registers)[32], int32_t (&HiLo)[2]){
-	uint32_t dividend = registers[op1];
-	uint32_t divisor = registers[op2];
+	uint32_t dividend = (uint32_t)registers[op1];
+	uint32_t divisor = (uint32_t)registers[op2];
 	//division by 0 --> arithmetic exception
 	//if (divisor == 0) exit(-10);
 	uint32_t rem = dividend % divisor;
@@ -602,8 +602,8 @@ void lwl(uint32_t address, uint8_t* data, uint32_t dest_reg, int32_t (&registers
 	//load unaligned data
 	uint32_t temp = 0x0;
 	uint32_t past_val = registers[dest_reg];
+	past_val = (past_val << (8 * unalignment)) >> (8 * unalignment);
 	for(int x = 0; x < unalignment; x++){
-		past_val = past_val & (0xFFFFFF00 << (8 * (3-x)));
 		temp = temp | ((uint32_t)data[address + x] << (8 * (3-x)));
 	}
 	registers[dest_reg] = past_val | temp;
@@ -697,8 +697,8 @@ void lwr(int32_t address, uint8_t* data, uint32_t dest_reg, int32_t (&registers)
 	//load unaligned data
 	uint32_t temp = 0x0;
 	uint32_t past_val = registers[dest_reg];
-	for(int x = 0; x < unalignment; x++){
-		past_val = past_val & (0xFFFFFF00 << (8 * x));
+	past_val = (past_val >> (8 * ++unalignment)) << (8 * unalignment);
+	for(int x = 0; x <= unalignment; x++){
 		temp = temp | ((uint32_t)data[address - x] << (8 * x));
 	}
 	registers[dest_reg] = past_val | temp;

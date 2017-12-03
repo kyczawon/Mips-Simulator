@@ -24,9 +24,9 @@ int main(int argc, char* argv[])
         exit(EXIT_FAILURE);
     }
 
-    // test_R_and_I(test_id, debug_mode, output);
+    test_R_and_I(test_id, debug_mode, output);
     // test_sl(test_id, debug_mode, output);
-    test_muldiv(test_id, debug_mode, output);
+    // test_muldiv(test_id, debug_mode, output);
 
 }
 
@@ -129,24 +129,38 @@ void test_sl(int& test_id, bool debug_mode, ofstream& output){
             string load_address_binary = int_to_bin(load_address);
             string store_address_binary = int_to_bin(store_address);
             string input1_binary = int_to_bin(input1);
+
+            int store_address_init = store_address;
+            while (store_address_init % 4 != 0) {
+                store_address_init--;
+            }
+            string store_address_init_binary = int_to_bin(store_address_init);
             
             stringstream ss;
+            //-----------put msb of address into register accessed by store-----------
+            //lui v1 16 most significant bits of address
+            ss << "0011110000000011" << store_address_binary.substr(0, 16) << endl;
+
+            //-----------initialize the word to -1-----------
+            //lui s1 - 16 most significant bits of input 1
+            ss << "00111100000100011111111111111111" << endl;
+            //ori s1 s1 - 16 least significant bits of input 1
+            ss << "00110110001100011111111111111111" << endl;
+            //sw $s1 address (16lsb) v1 (address 16msb)
+            ss << "1010110001110001" << store_address_init_binary.substr(16, 32) << endl;
+
             //-----------put value to be stored-----------
             //lui s0 - 16 most significant bits of input 1
             ss << "0011110000010000" << input1_binary.substr(0, 16) << endl;
             //ori s0 s0 - 16 least significant bits of input 1
             ss << "0011011000010000" << input1_binary.substr(16, 32) << endl;
-
-            //-----------put msb of address into register accessed by load-----------
-            //lui v1 16 most significant bits of address
-            ss << "0011110000000011" << load_address_binary.substr(0, 16) << endl;
-
-            //-----------put msb of address into register accessed by store-----------
-            //lui v1 16 most significant bits of address
-            ss << "0011110000000011" << store_address_binary.substr(0, 16) << endl;
-
+            
             //-----------test store and then load word-----------
             if (!is_store) { //if load, store a value and test load
+                //lui s2 - 16 most significant bits of input 1
+                ss << "00111100000100101111111111111111" << endl;
+                //ori s2 s2 - 16 least significant bits of input 1
+                ss << "00110110010100101111111111111111" << endl;
                 //sw $s0 address (16lsb) v1 (address 16msb)
                 ss << "1010110001110000" << store_address_binary.substr(16, 32) << endl;
                 //load_instruction to test with 16 least significant bits of address as immiediate
@@ -210,8 +224,7 @@ void test_muldiv(int& test_id, bool debug_mode, ofstream& output){
             cout << "muldiv_instructions file not found" << endl;
             exit(EXIT_FAILURE);
         }
-
-        //load instructions in the format instr | name | input1 | input2 | result 
+        //load instructions in the format instr | name | input1 | input2 | hi_result | lo_result
         string instr, instr_name;
         int input1, input2, expected_hi_result, expected_lo_result;
         while (instructions >> instr >> instr_name >> input1 >> input2 >> expected_hi_result >> expected_lo_result) {
@@ -229,13 +242,13 @@ void test_muldiv(int& test_id, bool debug_mode, ofstream& output){
             stringstream ss;
             //-----------initialize registers with required values-----------
             //lui s1 - 16 most significant bits of input 1
-            ss << "0011110000010001" << input1_binary.substr(0, 16) << endl;
+            ss << "0011110000010001" << input2_binary.substr(0, 16) << endl;
             //ori s1 s1 - 16 least significant bits of input 1
-            ss << "0011011000110001" << input1_binary.substr(16, 32) << endl;
+            ss << "0011011000110001" << input2_binary.substr(16, 32) << endl;
             //lui s0 - 16 most significant bits of input 2
-            ss << "0011110000010000" << input2_binary.substr(0, 16) << endl;
+            ss << "0011110000010000" << input1_binary.substr(0, 16) << endl;
             //ori s0 s0 - 16 least significant bits of input 2
-            ss << "0011011000010000" << input2_binary.substr(16, 32) << endl;
+            ss << "0011011000010000" << input1_binary.substr(16, 32) << endl;
             //instruction to test
             ss << "00000010000100010000000000" << instr << endl;
 
@@ -287,13 +300,13 @@ void test_muldiv(int& test_id, bool debug_mode, ofstream& output){
 
             //-----------initialize registers with required values-----------
             //lui s1 - 16 most significant bits of input 1
-            ss << "0011110000010001" << input1_binary.substr(0, 16) << endl;
+            ss << "0011110000010001" << input2_binary.substr(0, 16) << endl;
             //ori s1 s1 - 16 least significant bits of input 1
-            ss << "0011011000110001" << input1_binary.substr(16, 32) << endl;
+            ss << "0011011000110001" << input2_binary.substr(16, 32) << endl;
             //lui s0 - 16 most significant bits of input 2
-            ss << "0011110000010000" << input2_binary.substr(0, 16) << endl;
+            ss << "0011110000010000" << input1_binary.substr(0, 16) << endl;
             //ori s0 s0 - 16 least significant bits of input 2
-            ss << "0011011000010000" << input2_binary.substr(16, 32) << endl;
+            ss << "0011011000010000" << input1_binary.substr(16, 32) << endl;
             //instruction to test
             ss << "00000010000100010000000000" << instr << endl;
 
