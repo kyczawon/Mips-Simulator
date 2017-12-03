@@ -82,7 +82,7 @@ void execute(vector <uint32_t> &instructions, uint8_t* data, int32_t (&registers
 		execute_J(instr, data, registers, opcode, pc, instructions, HiLo);
 	}
 	//further decode and (eventually) execute
-	else execute_I(instr, data, registers, opcode);
+	else execute_I(instr, data, registers, opcode, pc, instructions, HiLo);
 }
 
 void execute_J(uint32_t instr, uint8_t* data, int32_t (&registers)[32], uint8_t& opcode, uint32_t& pc, vector<uint32_t> &instructions, int32_t (&HiLo)[2]) {
@@ -206,7 +206,7 @@ void execute_R(uint32_t instr, uint8_t* data, int32_t (&registers)[32], uint32_t
 	}
 }
 
-void execute_I (uint32_t instr, uint8_t* data, int32_t (&registers)[32], uint8_t &opcode){
+void execute_I (uint32_t instr, uint8_t* data, int32_t (&registers)[32], uint8_t &opcode, uint32_t& pc, vector<uint32_t> &instructions, int32_t (&HiLo)[2]){
 	uint32_t dest_reg, src_reg;
 	int32_t immediate;
 	decode_fields_I(dest_reg, src_reg, immediate, instr);
@@ -214,29 +214,28 @@ void execute_I (uint32_t instr, uint8_t* data, int32_t (&registers)[32], uint8_t
 	//filter 0x0_
 	if (opcode < 0x10){
 		switch(opcode){
-			// case 1:		// CORNER CASE --> MULTIPLE POSSIBILITY
-			// 	// bltz 	rs, label 	000001 		
-			//	if (dest_reg == 0) bltz(---);
-			// 	// bgez 	rs, label 	000001
-			// 	else if (dest_reg == 1) bgez (---);
-			//	// bltzal	re, label	000001
-			//	else if (dest_reg == 16) bltzal(---);
-			//	// bgezal	rs, ladel	000001
-			//	else if (dest reg == 17) 
-			//	bgezal(---);
-			// 	break;
-			// case 4:		// beq	rs, rt, label 		000100 
-			// 	beq(---);
-			// 	break;
-			// case 5:		// bne 	rs, rt, label 		000101
-			// 	bne(---);
-			// 	break;
-			// case 6:		// blez 	rs, label 		000110 
-			// 	blez(---);
-			// 	break;
-			// case 7:		// bgtz 	rs, label 		000111
-			// 	bgtz(---);
-			// 	break;
+			case 1:		// CORNER CASE --> MULTIPLE POSSIBILITY
+			 	// bltz 	rs, label 	000001 		
+				if (dest_reg == 0) bltz(src_reg, immediate, registers, instructions, data, pc, HiLo);
+			 	// bgez 	rs, label 	000001
+				else if (dest_reg == 1) bgez (src_reg, immediate, registers, instructions, data, pc, HiLo);
+				// bltzal	re, label	000001
+				else if (dest_reg == 16) bltzal(src_reg, immediate, registers, instructions, data, pc, HiLo);
+				// bgezal	rs, ladel	000001
+				else if (dest_reg == 17) bgezal(src_reg, immediate, registers, instructions, data, pc, HiLo);
+			 	break;
+			case 4:		// beq	rs, rt, label 		000100 
+			 	beq(src_reg, dest_reg, immediate, registers, instructions, data, pc, HiLo);
+			 	break;
+			case 5:		// bne 	rs, rt, label 		000101
+			 	bne(src_reg, dest_reg, immediate, registers, instructions, data, pc, HiLo);
+			 	break;
+			case 6:		// blez 	rs, label 		000110 
+			 	blez(src_reg, immediate, registers, instructions, data, pc, HiLo);
+			 	break;
+			case 7:		// bgtz 	rs, label 		000111
+			 	bgtz(src_reg, immediate, registers, instructions, data, pc, HiLo);
+			 	break;
 			case 8:		// addi 	rt, rs, imm 		001000 
 				addi(dest_reg, src_reg, immediate, registers);
 				break;
@@ -390,24 +389,17 @@ void mtlo(uint32_t src_reg, int32_t (&registers)[32], int32_t (&HiLo)[2]){
 }
 
 void mult(uint32_t op1, uint32_t op2, int32_t (&registers)[32], int32_t (&HiLo)[2]){
-	int64_t product = (int64_t) registers[op1] * (int64_t) registers[op2];
+	int64_t product = registers[op1] * registers[op2];
 	//put higher word in HI and lower word in LO
-	HiLo[1] = (int32_t) product;
-	HiLo[0] = (int32_t) (product >> 32);
-	
+	HiLo[0] = product >> 32;
+	HiLo[1] = product & 0x0000FFFF;
 }
 
 void multu(uint32_t op1, uint32_t op2, int32_t (&registers)[32], int32_t (&HiLo)[2]){
-	if (debug_mode) cout << registers[op1] << endl;
-	if (debug_mode) cout << (uint64_t)((uint32_t)registers[op1]) << endl;
-	if (debug_mode) cout << (uint64_t)((uint32_t)registers[op2]) << endl;
-	uint64_t product = (uint64_t)((uint32_t)registers[op1]) * (uint64_t)((uint32_t)registers[op2]);
-	if (debug_mode) cout << product << endl;
+	uint64_t product = (uint32_t)registers[op1] * (uint32_t)registers[op2];
 	//put higher word in HI and lower word in LO
-	HiLo[1] = (int32_t) product;
-	if (debug_mode) cout << HiLo[1] << endl;
-	HiLo[0] = (int32_t) (product >> 32);
-	if (debug_mode) cout << HiLo[0] << endl;
+	HiLo[0] = product >> 32;
+	HiLo[1] = product & 0x0000FFFF;
 }
 
 void div(uint32_t op1, uint32_t op2, int32_t (&registers)[32], int32_t (&HiLo)[2]){
@@ -501,6 +493,64 @@ void sltu(uint32_t dest_reg, uint32_t op1, uint32_t op2, int32_t (&registers)[32
 
 //////I TYPE INSTRUCTIONS///////
 
+void bltz(uint32_t &op, int32_t &immediate, int32_t (&registers)[32], vector <uint32_t> &instructions, uint8_t* data, uint32_t& pc, int32_t (&HiLo)[2]){
+	if (registers[op] < 0){
+		execute(instructions, data, registers, ++pc, HiLo);
+		pc += immediate;
+	}
+}
+
+void bgez(uint32_t &op, int32_t &immediate, int32_t (&registers)[32], vector <uint32_t> &instructions, uint8_t* data, uint32_t& pc, int32_t (&HiLo)[2]){
+	if (registers[op] >= 0){
+		execute(instructions, data, registers, ++pc, HiLo);
+		pc += immediate;
+	}
+}
+
+void bltzal(uint32_t &op, int32_t &immediate, int32_t (&registers)[32], vector <uint32_t> &instructions, uint8_t* data, uint32_t& pc, int32_t (&HiLo)[2]){
+	if (registers[op] < 0){
+		registers[31] = pc + 2;
+		execute(instructions, data, registers, ++pc, HiLo);
+		pc += immediate;
+	}
+}
+
+void bgezal(uint32_t &op, int32_t &immediate, int32_t (&registers)[32], vector <uint32_t> &instructions, uint8_t* data, uint32_t& pc, int32_t (&HiLo)[2]){
+	if (registers[op] >= 0){
+		registers[31] = pc + 2;
+		execute(instructions, data, registers, ++pc, HiLo);
+		pc += immediate;
+	}
+}
+
+void beq(uint32_t &op1, uint32_t &op2, int32_t &immediate, int32_t (&registers)[32], vector <uint32_t> &instructions, uint8_t* data, uint32_t& pc, int32_t (&HiLo)[2]){
+	if (registers[op1] == registers[op2]){
+		execute(instructions, data, registers, ++pc, HiLo);
+		pc += immediate;
+	}
+}
+
+void bne(uint32_t &op1, uint32_t &op2, int32_t &immediate, int32_t (&registers)[32], vector <uint32_t> &instructions, uint8_t* data, uint32_t& pc, int32_t (&HiLo)[2]){
+	if (registers[op1] != registers[op2]){
+		execute(instructions, data, registers, ++pc, HiLo);
+		pc += immediate;
+	}
+}
+
+void blez(uint32_t &op, int32_t &immediate, int32_t (&registers)[32], vector <uint32_t> &instructions, uint8_t* data, uint32_t& pc, int32_t (&HiLo)[2]){
+	if (registers[op] <= 0){
+		execute(instructions, data, registers, ++pc, HiLo);
+		pc += immediate;
+	}
+}
+
+void bgtz(uint32_t &op, int32_t &immediate, int32_t (&registers)[32], vector <uint32_t> &instructions, uint8_t* data, uint32_t& pc, int32_t (&HiLo)[2]){
+	if (registers[op] > 0){
+		execute(instructions, data, registers, ++pc, HiLo);
+		pc += immediate;
+	}
+}
+
 void addi(uint32_t &dest_reg, uint32_t &src_reg, int32_t &immediate, int32_t (&registers)[32]){
 	int32_t source = registers[src_reg];
 	int64_t sum = source + immediate;
@@ -586,7 +636,7 @@ void lh(uint32_t address, uint8_t* data, uint32_t dest_reg, int32_t (&registers)
 	else exit(-11);
 
 }
-
+	
 void lwl(uint32_t address, uint8_t* data, uint32_t dest_reg, int32_t (&registers)[32]){
 	//check if mem to be accessed is between correct bounds for data space
 	if (!(address >= ADDR_DATA && address < ADDR_DATA + DATA_SIZE)) exit(-11);

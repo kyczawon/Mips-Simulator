@@ -2,10 +2,12 @@
 #include <stdint.h>
 using namespace std;
 
+//main functions
+
 void execute(vector <uint32_t> &instructions, uint8_t* data, int32_t (&registers)[32] , uint32_t& pc, int32_t (&HiLo)[2]);
 void execute_R(uint32_t instr, uint8_t* data, int32_t (&registers)[32], uint32_t& pc, vector <uint32_t> &instructions, int32_t (&HiLo)[2]);
 void execute_J(uint32_t instr, uint8_t* data, int32_t (&registers)[32], uint8_t& opcode, uint32_t& pc, vector<uint32_t> &instructions, int32_t (&HiLo)[2]);
-void execute_I(uint32_t instr, uint8_t* data, int32_t (&registers)[32], uint8_t& opcode);
+void execute_I(uint32_t instr, uint8_t* data, int32_t (&registers)[32], uint8_t& opcode, uint32_t& pc, vector<uint32_t> &instructions, int32_t (&HiLo)[2]);
 void decode_fields_R (uint32_t &op1, uint32_t &op2, uint32_t &dest_reg, uint32_t &shift_amt, uint32_t &funct_code, const uint32_t &instr);
 void decode_fields_I (uint32_t &dest_reg, uint32_t &src_reg, int32_t& immediate, const uint32_t &instruction);
 
@@ -39,6 +41,14 @@ void slt(uint32_t dest_reg, uint32_t op1, uint32_t op2, int32_t (&registers)[32]
 void sltu(uint32_t dest_reg, uint32_t op1, uint32_t op2, int32_t (&registers)[32]);
 
 //I type instructions
+void bltz(uint32_t &op, int32_t &immediate, int32_t (&registers)[32], vector <uint32_t> &instructions, uint8_t* data, uint32_t& pc, int32_t (&HiLo)[2]);
+void bgez(uint32_t &op, int32_t &immediate, int32_t (&registers)[32], vector <uint32_t> &instructions, uint8_t* data, uint32_t& pc, int32_t (&HiLo)[2]);
+void bltzal(uint32_t &op, int32_t &immediate, int32_t (&registers)[32], vector <uint32_t> &instructions, uint8_t* data, uint32_t& pc, int32_t (&HiLo)[2]);
+void bgezal(uint32_t &op, int32_t &immediate, int32_t (&registers)[32], vector <uint32_t> &instructions, uint8_t* data, uint32_t& pc, int32_t (&HiLo)[2]);
+void beq(uint32_t &op1, uint32_t &op2, int32_t &immediate, int32_t (&registers)[32], vector <uint32_t> &instructions, uint8_t* data, uint32_t& pc, int32_t (&HiLo)[2]);
+void bne(uint32_t &op1, uint32_t &op2, int32_t &immediate, int32_t (&registers)[32], vector <uint32_t> &instructions, uint8_t* data, uint32_t& pc, int32_t (&HiLo)[2]);
+void blez(uint32_t &op, int32_t &immediate, int32_t (&registers)[32], vector <uint32_t> &instructions, uint8_t* data, uint32_t& pc, int32_t (&HiLo)[2]);
+void bgtz(uint32_t &op, int32_t &immediate, int32_t (&registers)[32], vector <uint32_t> &instructions, uint8_t* data, uint32_t& pc, int32_t (&HiLo)[2]);
 void addi(uint32_t &dest_reg, uint32_t &src_reg, int32_t &immediate, int32_t (&registers)[32]);
 void addiu(uint32_t &dest_reg, uint32_t &src_reg, int32_t &immediate, int32_t (&registers)[32]);
 void slti(uint32_t &dest_reg, uint32_t &src_reg, int32_t &immediate, int32_t (&registers)[32]);
