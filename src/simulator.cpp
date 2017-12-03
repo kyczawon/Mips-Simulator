@@ -28,6 +28,8 @@ int main(int argc, char* argv[]){
 	//global variables
 	 //program counter
 	uint32_t pc = 0;
+	//program counter for jumps/branches
+	uint32_t pc_next = 1;
 	 //HI, LO special registers
 	int32_t HiLo[2] = {0};
 
@@ -50,8 +52,21 @@ int main(int argc, char* argv[]){
 
 	//execute instructions
 	while (pc < instructions.size()){
-		execute(instructions, data, registers, pc, HiLo);
-		pc+=1;
+		execute(instructions, data, registers, pc, pc_next, HiLo);
+		//if 'non-pc-related' instruction has been executed
+		if (pc_next = pc + 1){
+			//update pc & pc_next as usual
+			pc++;
+			pc_next++;
+		}				
+		//if branch/jump has been executed
+		else{
+			//execute next instruction because of delay slot
+			execute(instructions, data, registers, ++pc, pc_next, HiLo);
+			//update pc to point to new instruction
+			pc = pc_next;
+			pc_next = pc + 1;
+		}
 	}
 	uint8_t exit_result = registers[3]; ///////////////////////////////////////////////////// corect?
   exit(exit_result);
@@ -67,38 +82,41 @@ uint32_t bin_string_to_uint32_t(string input) {
 	return x;
 }
 
-void execute(vector <uint32_t> &instructions, uint8_t* data, int32_t (&registers)[32], uint32_t& pc, int32_t (&HiLo)[2]) {
+void execute(vector <uint32_t> &instructions, uint8_t* data, int32_t (&registers)[32], uint32_t& pc, uint32_t& pc_next, int32_t (&HiLo)[2]) {
 	uint32_t instr = instructions[pc];
 	//decode instruction and call correct subfunction
 	//isolate opcode
 	uint8_t opcode = instr >> 26;
 	//check if R type
-	if (opcode == 0)
+	if (opcode == 0){
 		//execute
-		execute_R(instr, data, registers, pc, instructions, HiLo);
+		execute_R(instr, data, registers, pc, pc_next, HiLo);
+	}
 	//check if J type
 	else if (opcode == 2 || opcode == 3){
 		//execute
-		execute_J(instr, data, registers, opcode, pc, instructions, HiLo);
+		execute_J(instr, registers, opcode, pc, pc_next);
 	}
 	//further decode and (eventually) execute
-	else execute_I(instr, data, registers, opcode, pc, instructions, HiLo);
+	else execute_I(instr, data, registers, opcode, pc, pc_next);
 }
 
-void execute_J(uint32_t instr, uint8_t* data, int32_t (&registers)[32], uint8_t& opcode, uint32_t& pc, vector<uint32_t> &instructions, int32_t (&HiLo)[2]) {
+void execute_J(uint32_t instr, int32_t (&registers)[32], uint8_t& opcode, uint32_t& pc, uint32_t& pc_next) {
+	uint32_t instr_index = (instr << 6) >> 6;
+	
 	//Jump (J)
 	if (opcode == 2){ 
-		j(instructions, data, registers, pc, HiLo);
+		j(instr_index, pc, pc_next);
 	}
 	//Jump and Link (JAL)
 	else if (opcode == 3){
-		jal(instructions, data, registers, pc, HiLo);
+		jal(instr_index, registers, pc, pc_next);
 	}
 	//invalid instruction
 	else exit(-12);
 }
 
-void execute_R(uint32_t instr, uint8_t* data, int32_t (&registers)[32], uint32_t& pc, vector<uint32_t> &instructions, int32_t (&HiLo)[2]) {
+void execute_R(uint32_t instr, uint8_t* data, int32_t (&registers)[32], uint32_t& pc, uint32_t& pc_next, int32_t (&HiLo)[2]) {
 	//decode relevant operation from function code(LS 5 bits)
 	uint32_t funct_code = (instr << 26) >> 26;
 	uint32_t dest_reg, op1, op2, shift_amt;
@@ -125,10 +143,10 @@ void execute_R(uint32_t instr, uint8_t* data, int32_t (&registers)[32], uint32_t
 			 	srav(dest_reg, op1, op2, registers);
 			 	break;
 			case 8:		// jr 	rs 			001000
-			 	jr(instructions, data, op1, registers, pc, HiLo);
+			 	jr(op1, registers, pc, pc_next);
 			 	break;
 			case 9:		// jalr rd, rs 		001001
-			 	jalr(instructions, data, op1, dest_reg, registers, pc, HiLo);
+			 	jalr(op1, dest_reg, registers, pc, pc_next);
 			 	break;
 			//invalid instruction
 			default: exit(-12);
@@ -206,7 +224,7 @@ void execute_R(uint32_t instr, uint8_t* data, int32_t (&registers)[32], uint32_t
 	}
 }
 
-void execute_I (uint32_t instr, uint8_t* data, int32_t (&registers)[32], uint8_t &opcode, uint32_t& pc, vector<uint32_t> &instructions, int32_t (&HiLo)[2]){
+void execute_I (uint32_t instr, uint8_t* data, int32_t (&registers)[32], uint8_t &opcode, uint32_t& pc, uint32_t& pc_next){
 	uint32_t dest_reg, src_reg;
 	int32_t immediate;
 	decode_fields_I(dest_reg, src_reg, immediate, instr);
@@ -216,25 +234,25 @@ void execute_I (uint32_t instr, uint8_t* data, int32_t (&registers)[32], uint8_t
 		switch(opcode){
 			case 1:		// CORNER CASE --> MULTIPLE POSSIBILITY
 			 	// bltz 	rs, label 	000001 		
-				if (dest_reg == 0) bltz(src_reg, immediate, registers, instructions, data, pc, HiLo);
+				if (dest_reg == 0) bltz(src_reg, immediate, registers, pc, pc_next);
 			 	// bgez 	rs, label 	000001
-				else if (dest_reg == 1) bgez (src_reg, immediate, registers, instructions, data, pc, HiLo);
+				else if (dest_reg == 1) bgez (src_reg, immediate, registers, pc, pc_next);
 				// bltzal	re, label	000001
-				else if (dest_reg == 16) bltzal(src_reg, immediate, registers, instructions, data, pc, HiLo);
+				else if (dest_reg == 16) bltzal(src_reg, immediate, registers, pc, pc_next);
 				// bgezal	rs, ladel	000001
-				else if (dest_reg == 17) bgezal(src_reg, immediate, registers, instructions, data, pc, HiLo);
+				else if (dest_reg == 17) bgezal(src_reg, immediate, registers, pc, pc_next);
 			 	break;
 			case 4:		// beq	rs, rt, label 		000100 
-			 	beq(src_reg, dest_reg, immediate, registers, instructions, data, pc, HiLo);
+			 	beq(src_reg, dest_reg, immediate, registers, pc, pc_next);
 			 	break;
 			case 5:		// bne 	rs, rt, label 		000101
-			 	bne(src_reg, dest_reg, immediate, registers, instructions, data, pc, HiLo);
+			 	bne(src_reg, dest_reg, immediate, registers, pc, pc_next);
 			 	break;
 			case 6:		// blez 	rs, label 		000110 
-			 	blez(src_reg, immediate, registers, instructions, data, pc, HiLo);
+			 	blez(src_reg, immediate, registers, pc, pc_next);
 			 	break;
 			case 7:		// bgtz 	rs, label 		000111
-			 	bgtz(src_reg, immediate, registers, instructions, data, pc, HiLo);
+			 	bgtz(src_reg, immediate, registers, pc, pc_next);
 			 	break;
 			case 8:		// addi 	rt, rs, imm 		001000 
 				addi(dest_reg, src_reg, immediate, registers);
@@ -329,7 +347,7 @@ void sll(uint32_t dest_reg, uint32_t op, uint32_t shift_amt, int32_t (&registers
 	registers[dest_reg] = registers[op] << shift_amt;
 }
 
-void srl(uint32_t dest_reg, uint32_t op, uint32_t shift_amt, int32_t (&registers)[32]){ ////////////////////////////had do cast first
+void srl(uint32_t dest_reg, uint32_t op, uint32_t shift_amt, int32_t (&registers)[32]){
 	registers[dest_reg] = ((uint32_t) registers[op]) >> shift_amt;
 }
 
@@ -358,18 +376,15 @@ void srav(uint32_t dest_reg, uint32_t op1, uint32_t op2, int32_t (&registers)[32
 	else registers[dest_reg] = (num >> shift_amt) | (0xFFFFFFFF << 32 - 1);
 }
 
-void jr(vector <uint32_t> &instructions, uint8_t* data, uint32_t src_reg, int32_t (&registers)[32], uint32_t& pc, int32_t (&HiLo)[2]){
-	pc++;
-	execute(instructions, data, registers, pc, HiLo);
-	if (src_reg != 0 && registers[src_reg] != 0) pc = (registers[src_reg] / 4) - 1;
-	else pc = instructions.size() - 1;
+void jr(uint32_t src_reg, int32_t (&registers)[32], uint32_t& pc, uint32_t& pc_next){
+	pc_next = registers[src_reg];
 }
 
-void jalr(vector <uint32_t> &instructions, uint8_t* data, uint32_t src_reg, uint32_t dest_reg, int32_t (&registers)[32], uint32_t& pc, int32_t (&HiLo)[2]){
+void jalr(uint32_t src_reg, uint32_t dest_reg, int32_t (&registers)[32], uint32_t& pc, uint32_t& pc_next){
 	//save return address
 	registers[dest_reg] = pc + 2;
 	//execute jr
-	jr(instructions, data, src_reg, registers, pc, HiLo);
+	jr(src_reg, registers, pc, pc_next);
 }
 
 void mfhi(uint32_t dest_reg, int32_t (&registers)[32], int32_t HI){
@@ -415,8 +430,8 @@ void div(uint32_t op1, uint32_t op2, int32_t (&registers)[32], int32_t (&HiLo)[2
 }
 
 void divu(uint32_t op1, uint32_t op2, int32_t (&registers)[32], int32_t (&HiLo)[2]){
-	uint32_t dividend = registers[op1];
-	uint32_t divisor = registers[op2];
+	uint32_t dividend = (uint32_t)registers[op1];
+	uint32_t divisor = (uint32_t)registers[op2];
 	//division by 0 --> arithmetic exception
 	//if (divisor == 0) exit(-10);
 	uint32_t rem = dividend % divisor;
@@ -493,61 +508,53 @@ void sltu(uint32_t dest_reg, uint32_t op1, uint32_t op2, int32_t (&registers)[32
 
 //////I TYPE INSTRUCTIONS///////
 
-void bltz(uint32_t &op, int32_t &immediate, int32_t (&registers)[32], vector <uint32_t> &instructions, uint8_t* data, uint32_t& pc, int32_t (&HiLo)[2]){
+void bltz(uint32_t &op, int32_t &immediate, int32_t (&registers)[32], uint32_t& pc, uint32_t& pc_next){
 	if (registers[op] < 0){
-		execute(instructions, data, registers, ++pc, HiLo);
-		pc += immediate;
+		pc_next = pc + immediate;
 	}
 }
 
-void bgez(uint32_t &op, int32_t &immediate, int32_t (&registers)[32], vector <uint32_t> &instructions, uint8_t* data, uint32_t& pc, int32_t (&HiLo)[2]){
+void bgez(uint32_t &op, int32_t &immediate, int32_t (&registers)[32], uint32_t& pc, uint32_t& pc_next){
 	if (registers[op] >= 0){
-		execute(instructions, data, registers, ++pc, HiLo);
-		pc += immediate;
+		pc_next = pc + immediate;
 	}
 }
 
-void bltzal(uint32_t &op, int32_t &immediate, int32_t (&registers)[32], vector <uint32_t> &instructions, uint8_t* data, uint32_t& pc, int32_t (&HiLo)[2]){
+void bltzal(uint32_t &op, int32_t &immediate, int32_t (&registers)[32], uint32_t& pc, uint32_t& pc_next){
 	if (registers[op] < 0){
 		registers[31] = pc + 2;
-		execute(instructions, data, registers, ++pc, HiLo);
-		pc += immediate;
+		pc_next = pc + immediate;
 	}
 }
 
-void bgezal(uint32_t &op, int32_t &immediate, int32_t (&registers)[32], vector <uint32_t> &instructions, uint8_t* data, uint32_t& pc, int32_t (&HiLo)[2]){
+void bgezal(uint32_t &op, int32_t &immediate, int32_t (&registers)[32], uint32_t& pc, uint32_t& pc_next){
 	if (registers[op] >= 0){
 		registers[31] = pc + 2;
-		execute(instructions, data, registers, ++pc, HiLo);
-		pc += immediate;
+		pc_next = pc + immediate;
 	}
 }
 
-void beq(uint32_t &op1, uint32_t &op2, int32_t &immediate, int32_t (&registers)[32], vector <uint32_t> &instructions, uint8_t* data, uint32_t& pc, int32_t (&HiLo)[2]){
+void beq(uint32_t &op1, uint32_t &op2, int32_t &immediate, int32_t (&registers)[32], uint32_t& pc, uint32_t& pc_next){
 	if (registers[op1] == registers[op2]){
-		execute(instructions, data, registers, ++pc, HiLo);
-		pc += immediate;
+		pc_next = pc + immediate;
 	}
 }
 
-void bne(uint32_t &op1, uint32_t &op2, int32_t &immediate, int32_t (&registers)[32], vector <uint32_t> &instructions, uint8_t* data, uint32_t& pc, int32_t (&HiLo)[2]){
+void bne(uint32_t &op1, uint32_t &op2, int32_t &immediate, int32_t (&registers)[32], uint32_t& pc, uint32_t& pc_next){
 	if (registers[op1] != registers[op2]){
-		execute(instructions, data, registers, ++pc, HiLo);
-		pc += immediate;
+		pc_next = pc + immediate;
 	}
 }
 
-void blez(uint32_t &op, int32_t &immediate, int32_t (&registers)[32], vector <uint32_t> &instructions, uint8_t* data, uint32_t& pc, int32_t (&HiLo)[2]){
+void blez(uint32_t &op, int32_t &immediate, int32_t (&registers)[32],  uint32_t& pc, uint32_t& pc_next){
 	if (registers[op] <= 0){
-		execute(instructions, data, registers, ++pc, HiLo);
-		pc += immediate;
+		pc_next = pc + immediate;
 	}
 }
 
-void bgtz(uint32_t &op, int32_t &immediate, int32_t (&registers)[32], vector <uint32_t> &instructions, uint8_t* data, uint32_t& pc, int32_t (&HiLo)[2]){
+void bgtz(uint32_t &op, int32_t &immediate, int32_t (&registers)[32], uint32_t& pc, uint32_t& pc_next){
 	if (registers[op] > 0){
-		execute(instructions, data, registers, ++pc, HiLo);
-		pc += immediate;
+		pc_next = pc + immediate;
 	}
 }
 
@@ -652,8 +659,8 @@ void lwl(uint32_t address, uint8_t* data, uint32_t dest_reg, int32_t (&registers
 	//load unaligned data
 	uint32_t temp = 0x0;
 	uint32_t past_val = registers[dest_reg];
+	past_val = (past_val << (8 * unalignment)) >> (8 * unalignment);
 	for(int x = 0; x < unalignment; x++){
-		past_val = past_val & (0xFFFFFF00 << (8 * (3-x)));
 		temp = temp | ((uint32_t)data[address + x] << (8 * (3-x)));
 	}
 	registers[dest_reg] = past_val | temp;
@@ -747,8 +754,8 @@ void lwr(int32_t address, uint8_t* data, uint32_t dest_reg, int32_t (&registers)
 	//load unaligned data
 	uint32_t temp = 0x0;
 	uint32_t past_val = registers[dest_reg];
-	for(int x = 0; x < unalignment; x++){
-		past_val = past_val & (0xFFFFFF00 << (8 * x));
+	past_val = (past_val >> (8 * ++unalignment)) << (8 * unalignment);
+	for(int x = 0; x <= unalignment; x++){
 		temp = temp | ((uint32_t)data[address - x] << (8 * x));
 	}
 	registers[dest_reg] = past_val | temp;
@@ -793,18 +800,14 @@ void sw(uint32_t address, uint8_t* data, int32_t value){
 
 //////J TYPE INSTRUCTIONS///////
 
-void j(vector <uint32_t> &instructions, uint8_t* data, int32_t (&registers)[32], uint32_t& pc, int32_t (&HiLo)[2]){
-	uint32_t instr = instructions[pc];
-	uint32_t instr_index = (instr << 6) >> 6;
-	pc++;
-	execute(instructions, data, registers, pc, HiLo);
+void j(uint32_t& instr_index, uint32_t& pc, uint32_t& pc_next){
 	uint32_t temp = pc << 2;
-	pc = (((temp & 0xF0000000) + (instr_index << 2)) >> 2) - 1;
+	pc_next = (((temp & 0xF0000000) | (instr_index << 2)) >> 2);
 }
 
-void jal(vector <uint32_t> &instructions, uint8_t* data, int32_t (&registers)[32], uint32_t& pc, int32_t (&HiLo)[2]){
+void jal(uint32_t& instr_index, int32_t (&registers)[32], uint32_t& pc, uint32_t& pc_next){
 	//link return address in register 31
 	registers[31]  = pc + 2;
 	//execute normal j
-	j (instructions, data, registers, pc, HiLo);
+	j (instr_index, pc, pc_next);
 }
