@@ -52,15 +52,20 @@ int main(int argc, char* argv[]){
 
 	//execute instructions
 	while (pc < instructions.size()){
+		if (debug_mode) cout << "pc: " << pc << endl;
+		if (debug_mode) cout << "pc next: " << pc_next << endl;
 		execute(instructions, data, registers, pc, pc_next, HiLo);
 		//if 'non-pc-related' instruction has been executed
-		if (pc_next = pc + 1){
+		if (pc_next == 0) { //because jr sets pc_next to zero
+			break;
+		} else if (pc_next == pc + 1){
 			//update pc & pc_next as usual
 			pc++;
 			pc_next++;
 		}				
 		//if branch/jump has been executed
 		else{
+			if (debug_mode) cout << "entered pc update" << pc << endl;
 			//execute next instruction because of delay slot
 			execute(instructions, data, registers, ++pc, pc_next, HiLo);
 			//update pc to point to new instruction
@@ -68,7 +73,8 @@ int main(int argc, char* argv[]){
 			pc_next = pc + 1;
 		}
 	}
-	uint8_t exit_result = registers[3]; ///////////////////////////////////////////////////// corect?
+	char exit_result = (char) registers[2];
+	cout << exit_result << endl;
   exit(exit_result);
 }
 
@@ -319,7 +325,7 @@ void execute_I (uint32_t instr, uint8_t* data, int32_t (&registers)[32], uint8_t
 			//invalid instruction
 			default: exit(-12);
 		}
-	}	
+	}
 }
 
 void decode_fields_I (uint32_t &dest_reg, uint32_t &src_reg, int32_t& immediate, const uint32_t &instruction){
@@ -536,7 +542,7 @@ void bgezal(uint32_t &op, int32_t &immediate, int32_t (&registers)[32], uint32_t
 
 void beq(uint32_t &op1, uint32_t &op2, int32_t &immediate, int32_t (&registers)[32], uint32_t& pc, uint32_t& pc_next){
 	if (registers[op1] == registers[op2]){
-		pc_next = pc + immediate;
+		pc_next += immediate;
 	}
 }
 
@@ -585,6 +591,7 @@ void andi(uint32_t &dest_reg, uint32_t &src_reg, int32_t &immediate, int32_t (&r
 }
 
 void ori(uint32_t &dest_reg, uint32_t &src_reg, int32_t &immediate, int32_t (&registers)[32]){
+	if (debug_mode) cout << "entered ori" << endl;
 	immediate = immediate & 0x0000FFFF;
 	registers[dest_reg] = registers[src_reg] | immediate;
 }
@@ -810,4 +817,12 @@ void jal(uint32_t& instr_index, int32_t (&registers)[32], uint32_t& pc, uint32_t
 	registers[31]  = pc + 2;
 	//execute normal j
 	j (instr_index, pc, pc_next);
+}
+
+void print_registers(int32_t (&registers)[32]){
+	if (debug_mode) {
+		for (int i=0; i< 32;i++) {
+			cout << "register " << i << ": " << registers[i] << endl;
+		}
+	}
 }
