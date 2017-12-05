@@ -55,6 +55,8 @@ int main(int argc, char* argv[]){
 		if (debug_mode) cout << "pc: " << pc << endl;
 		if (debug_mode) cout << "pc next: " << pc_next << endl;
 		execute(instructions, data, registers, pc, pc_next, HiLo);
+		if (debug_mode) cout << "after pc: " << pc << endl;
+		if (debug_mode) cout << "after pc next: " << pc_next << endl;
 		//if 'non-pc-related' instruction has been executed
 		if (pc_next == 0) { //because jr sets pc_next to zero
 			break;
@@ -515,52 +517,58 @@ void sltu(uint32_t dest_reg, uint32_t op1, uint32_t op2, int32_t (&registers)[32
 //////I TYPE INSTRUCTIONS///////
 
 void bltz(uint32_t &op, int32_t &immediate, int32_t (&registers)[32], uint32_t& pc, uint32_t& pc_next){
+	if (debug_mode) cout << "registers[op]" << registers[op] << endl;;
 	if (registers[op] < 0){
-		pc_next = pc + immediate;
+		pc_next += immediate;
 	}
 }
 
 void bgez(uint32_t &op, int32_t &immediate, int32_t (&registers)[32], uint32_t& pc, uint32_t& pc_next){
 	if (registers[op] >= 0){
-		pc_next = pc + immediate;
+		pc_next += immediate;
 	}
 }
 
 void bltzal(uint32_t &op, int32_t &immediate, int32_t (&registers)[32], uint32_t& pc, uint32_t& pc_next){
 	if (registers[op] < 0){
 		registers[31] = pc + 2;
-		pc_next = pc + immediate;
+		pc_next += immediate;
 	}
 }
 
 void bgezal(uint32_t &op, int32_t &immediate, int32_t (&registers)[32], uint32_t& pc, uint32_t& pc_next){
 	if (registers[op] >= 0){
 		registers[31] = pc + 2;
-		pc_next = pc + immediate;
-	}
-}
-
-void beq(uint32_t &op1, uint32_t &op2, int32_t &immediate, int32_t (&registers)[32], uint32_t& pc, uint32_t& pc_next){
-	if (registers[op1] == registers[op2]){
 		pc_next += immediate;
 	}
 }
 
+void beq(uint32_t &op1, uint32_t &op2, int32_t &immediate, int32_t (&registers)[32], uint32_t& pc, uint32_t& pc_next){
+	if (debug_mode) cout << "immediate: " << immediate << endl;
+	if (debug_mode) cout << "registers[op1]: " << registers[op1] << "registers[op2]: " << registers[op2] << immediate << endl;
+	if (registers[op1] == registers[op2]){
+		pc_next += immediate;
+		if (debug_mode) cout << "entered:" << endl;
+	}
+	if (debug_mode) cout << "pc_next: " << pc_next << endl;
+}
+
 void bne(uint32_t &op1, uint32_t &op2, int32_t &immediate, int32_t (&registers)[32], uint32_t& pc, uint32_t& pc_next){
+	if (debug_mode) cout << "registers[op1]: " << registers[op1] << "registers[op2]: " << registers[op2] << immediate << endl;
 	if (registers[op1] != registers[op2]){
-		pc_next = pc + immediate;
+		pc_next += immediate;
 	}
 }
 
 void blez(uint32_t &op, int32_t &immediate, int32_t (&registers)[32],  uint32_t& pc, uint32_t& pc_next){
 	if (registers[op] <= 0){
-		pc_next = pc + immediate;
+		pc_next += immediate;
 	}
 }
 
 void bgtz(uint32_t &op, int32_t &immediate, int32_t (&registers)[32], uint32_t& pc, uint32_t& pc_next){
 	if (registers[op] > 0){
-		pc_next = pc + immediate;
+		pc_next += immediate;
 	}
 }
 
