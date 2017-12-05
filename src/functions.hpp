@@ -5,7 +5,7 @@ using namespace std;
 //main functions
 
 void execute(vector <uint32_t> &instructions, uint8_t* data, int32_t (&registers)[32] , uint32_t& pc, uint32_t& pc_next, int32_t (&HiLo)[2]);
-void execute_R(uint32_t instr, uint8_t* data, int32_t (&registers)[32], uint32_t& pc, vector <uint32_t> &instructions, int32_t (&HiLo)[2]);
+void execute_R(uint32_t instr, uint8_t* data, int32_t (&registers)[32], uint32_t& pc, uint32_t& pc_next, int32_t (&HiLo)[2]);
 void execute_J(uint32_t instr, int32_t (&registers)[32], uint8_t& opcode, uint32_t& pc, uint32_t& pc_next);
 void execute_I (uint32_t instr, uint8_t* data, int32_t (&registers)[32], uint8_t &opcode, uint32_t& pc, uint32_t& pc_next);
 void decode_fields_R (uint32_t &op1, uint32_t &op2, uint32_t &dest_reg, uint32_t &shift_amt, uint32_t &funct_code, const uint32_t &instr);
@@ -45,7 +45,7 @@ void bltz(uint32_t &op, int32_t &immediate, int32_t (&registers)[32], uint32_t& 
 void bgez(uint32_t &op, int32_t &immediate, int32_t (&registers)[32], uint32_t& pc, uint32_t& pc_next);
 void bltzal(uint32_t &op, int32_t &immediate, int32_t (&registers)[32], uint32_t& pc, uint32_t& pc_next);
 void bgezal(uint32_t &op, int32_t &immediate, int32_t (&registers)[32], uint32_t& pc, uint32_t& pc_next);
-void bequint32_t &op1, uint32_t &op2, int32_t &immediate, int32_t (&registers)[32], uint32_t& pc, uint32_t& pc_next);
+void beq(uint32_t &op1, uint32_t &op2, int32_t &immediate, int32_t (&registers)[32], uint32_t& pc, uint32_t& pc_next);
 void bne(uint32_t &op1, uint32_t &op2, int32_t &immediate, int32_t (&registers)[32], uint32_t& pc, uint32_t& pc_next);
 void blez(uint32_t &op, int32_t &immediate, int32_t (&registers)[32],  uint32_t& pc, uint32_t& pc_next);
 void bgtz(uint32_t &op, int32_t &immediate, int32_t (&registers)[32],  uint32_t& pc, uint32_t& pc_next);
@@ -74,3 +74,4 @@ void jal(uint32_t& instr_index, int32_t (&registers)[32], uint32_t& pc, uint32_t
 
 //helper functions
 uint32_t bin_string_to_uint32_t(string input);
+void print_registers(int32_t (&registers)[32]);
