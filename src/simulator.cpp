@@ -8,7 +8,9 @@
 #include <iostream>
 #include "constants.hpp"
 #include "functions.hpp"
+using namespace std;
 bool debug_mode;
+
 
 int main(int argc, char* argv[]){
 	//debug mode
@@ -33,22 +35,60 @@ int main(int argc, char* argv[]){
 	 //HI, LO special registers
 	int32_t HiLo[2] = {0};
 
-	//open Binary file
-	ifstream infile;
-	infile.open(argv[1]);
 
+////////////////////OLD WAY --> BOOOORING (and incorrect)
+	// //open Binary file
+	// ifstream infile;
+	// infile.open(argv[1]);
+
+
+	// //if IO error exit with correct exit code
+	// if (!infile.is_open()) {
+	// 	exit(-21);
+	// }
+
+	// //load instructions from Binary file into correct location in RAM 
+	// string input;
+	// int32_t offset = ADDR_INSTR;
+	// while (infile >> input) {
+	// 	uint32_t x = bin_string_to_uint32_t(input);
+	// 	instructions.push_back(x);
+	// }
+
+///////////////////NEW WAY --> 100% SWAG
+	streampos size;
+	char * memblock;
+	//open file with 'binary' attributes
+  	ifstream infile (argv[1], ios::in|ios::binary|ios::ate);
 	//if IO error exit with correct exit code
-	if (!infile.is_open()) {
-		exit(-21);
+	if (!infile.is_open()) exit(-21);
+	//else read the file and store in temporary dinamically allocated array of bytes
+	size = infile.tellg();
+	memblock = new char [size];
+	infile.seekg (0, ios::beg);
+	infile.read (memblock, size);
+	infile.close();
+	//combine bytes and copy instructions in vector
+	uint32_t temp;
+	for(int i = 0; i < size; i += 4){
+		temp = 0;
+		//combine adjacent bytes
+		for(int j = 0; j < 4; j++){
+			cout << "bit " << 4-j << " : " << ((uint16_t)memblock[i+j]) << endl;
+			temp = temp | ((uint8_t)memblock[i + j] << (8 * (3 - j)));
+		}
+		//store in vector
+		cout << "instruction inserted!\n";
+		cout << "instr code: " << temp << endl;
+		instructions.push_back(temp);
 	}
+	//delete temporary array of bytes
+   	delete[] memblock;
+		////	(this version of the I/O protocol with the input file has been implemented later on
+		//// 	but all the simulator relies on the instructions to be stored as 32b words in a vector
+		//// 	that is why we kept the vector as final data structure)
 
-	//load instructions from Binary file into correct location in RAM 
-	string input;
-	int32_t offset = ADDR_INSTR;
-	while (infile >> input) {
-		uint32_t x = bin_string_to_uint32_t(input);
-		instructions.push_back(x);
-	}
+
 
 	//execute instructions
 	while (pc < instructions.size()){
