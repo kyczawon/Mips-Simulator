@@ -15,7 +15,7 @@ int main(int argc, char* argv[])
     int test_id = 0;
     //debug mode
     
-	if (argc > 1) debug_mode = (strcmp(argv[1], "d"));
+    if (argc > 1) debug_mode = (strcmp(argv[1],"-d")==0);
     ofstream output;
     string output_name = "test/output/output.csv";
     output.open(output_name.c_str());
@@ -30,7 +30,6 @@ int main(int argc, char* argv[])
     test_muldiv(test_id, debug_mode, output);
     test_branch(test_id, debug_mode, output);
     test_link_fwd(test_id, debug_mode, output);
-    // test_link_back(test_id, debug_mode, output);
 }
 
 void test_jr(int& test_id, bool debug_mode, ofstream& output){
@@ -50,13 +49,13 @@ void test_jr(int& test_id, bool debug_mode, ofstream& output){
     get_simulator_output(debug_mode, result, exit_code);
     string status = "Fail";
     stringstream message;
-    message << "[, jr $zero expected: -207 got: " << exit_code << "]";
+    message << ",[jr $zero expected: -207 got: " << exit_code << "]";
 
     if (exit_code == -207) {
         status = "Pass";
     }
-    cout << test_id << ", jr" << ", " << status << ", Alelo " << message.str() << endl;
-    output << test_id << ", jr" << ", " << status << ", Alelo " << message.str() << endl;
+    cout << test_id << "| jr" << ", " << status << ", Alelo " << message.str() << endl;
+    output << test_id << "| jr" << ", " << status << ", Alelo " << message.str() << endl;
 }
 
 void test_link_fwd(int& test_id, bool debug_mode, ofstream& output){
@@ -68,11 +67,11 @@ void test_link_fwd(int& test_id, bool debug_mode, ofstream& output){
         cout << "link_instructions.txt file not found" << endl;
         exit(EXIT_FAILURE);
     }
-    //load instructions in the format instr | name | input1 | input2 | expected_result (1 = branch, 2= no branch)
+    //load instructions in the format instr | name | input1 | input2 | expected_result (1 = branch, 2= no branch) | expected_exit_code
     //instr must have the offset set to 
     string instr, instr_name;
-    int input1, input2, expected_result;
-    while (instructions >> instr >> instr_name >> input1 >> input2 >> expected_result) {
+    int input1, input2, expected_result, expected_exit;
+    while (instructions >> instr >> instr_name >> input1 >> input2 >> expected_result >> expected_exit) {
 
         string binary_name = "test/temp/binary.bin";
         binary.open(binary_name.c_str());
@@ -126,12 +125,12 @@ void test_link_fwd(int& test_id, bool debug_mode, ofstream& output){
 
         string status = "Fail";
         stringstream message;
-        message << "[, " << input1 << " " << instr_name << " " << input2 << " expected the branch to";
+        message << ",[ " << input1 << " " << instr_name << " " << input2 << " expected the branch to";
         if (expected_result == 2) {
             message << " not";
         }
-        message << " execute] " << result;
-        if ((expected_result == 2 && result == 2) || (expected_result == 1 && result == 3)) {
+        message << " execute with exit code: " << expected_exit;
+        if (((expected_result == 2 && result == 2) || (expected_result == 1 && result == 3)) && exit_code == expected_exit) {
             status = "Pass";
         }
 
@@ -196,7 +195,7 @@ void test_link_fwd(int& test_id, bool debug_mode, ofstream& output){
 
 //         string status = "Fail";
 //         stringstream message;
-//         message << "[, " << input1 << " " << instr_name << " " << input2 << " expected the branch to";
+//         message << ",[ " << input1 << " " << instr_name << " " << input2 << " expected the branch to";
 //         if (expected_result == 2) {
 //             message << " not";
 //         }
@@ -220,10 +219,10 @@ void test_branch(int& test_id, bool debug_mode, ofstream& output){
         cout << "brj_instructions.txt file not found" << endl;
         exit(EXIT_FAILURE);
     }
-    //load instructions in the format instr | name | input1 | input2 | expected_result (1 = branch, 2= no branch)
+    //load instructions in the format instr | name | input1 | input2 | expected_result (1 = branch, 2= no branch) | expected_exit
     string instr, instr_name;
-    int input1, input2, expected_result;
-    while (instructions >> instr >> instr_name >> input1 >> input2 >> expected_result) {
+    int input1, input2, expected_result, expected_exit;
+    while (instructions >> instr >> instr_name >> input1 >> input2 >> expected_result >> expected_exit) {
 
         string binary_name = "test/temp/binary.bin";
         binary.open(binary_name.c_str());
@@ -278,12 +277,13 @@ void test_branch(int& test_id, bool debug_mode, ofstream& output){
 
         string status = "Fail";
         stringstream message;
-        message << "[, " << input1 << " " << instr_name << " " << input2 << " expected the branch to execute " << expected_result << " instruction(s) following the branch. The branch executed: " << result;
+        message << ",[ " << input1 << " " << instr_name << " " << input2 << " expected the branch to execute " << expected_result << " instruction(s) following the branch. The branch executed: "
+        << result << "| Expected exit_code: " << expected_exit << " exit: " << exit_code;
         if (instr_name == "beq") {
-            message << ", IF THIS INSTRUCTION FAILS, ALL BACKWARD BRANCHES WILL FAIL";
+            message << "| IF THIS INSTRUCTION FAILS, ALL BACKWARD BRANCHES WILL FAIL";
         } 
         message << "]";
-        if (result == expected_result) {
+        if (result == expected_result && exit_code == expected_exit) {
             status = "Pass";
         }
 
@@ -363,8 +363,9 @@ void test_branch(int& test_id, bool debug_mode, ofstream& output){
         status = "Fail";
         message.str( std::string() );
         message.clear();
-        message << "[, When branching backwards, " << input1 << " " << instr_name << " " << input2 << " expected the branch to execute " << expected_result << " instruction(s) following the branch. The branch executed: " << result << "]";
-        if (result == expected_result) {
+        message << ",[ " << input1 << " " << instr_name << " " << input2 << " expected the branch to execute " << expected_result << " instruction(s) following the branch. The branch executed: "
+        << result << "| Expected exit_code: " << expected_exit << " exit: " << exit_code;
+        if (result == expected_result && exit_code == expected_exit) {
             status = "Pass";
         }
 
@@ -383,10 +384,10 @@ void test_R_and_I(int& test_id, bool debug_mode, ofstream& output){
             cout << "Instructions file not found" << endl;
             exit(EXIT_FAILURE);
         }
-        //load instructions in the format instr | name | input1 | input2 | result 
+        //load instructions in the format instr | name | input1 | input2 | result | exit
         string instr, instr_name;
-        int input1, input2, expected_result;
-        while (instructions >> instr >> instr_name >> input1 >> input2 >> expected_result) {
+        int input1, input2, expected_result, expected_exit;
+        while (instructions >> instr >> instr_name >> input1 >> input2 >> expected_result >> expected_exit) {
 
             string binary_name = "test/temp/binary.bin";
             binary.open(binary_name.c_str());
@@ -435,9 +436,10 @@ void test_R_and_I(int& test_id, bool debug_mode, ofstream& output){
 
             string status = "Fail";
             stringstream message;
-            message << "[, " << input1 << " " << instr_name << " " << input2 << " expected: " << expected_result << ", got: " << result << "]";
+            message << ",[ " << input1 << " " << instr_name << " " << input2 << " expected: " << expected_result << " got: "
+            << result << "| Expected exit_code " << expected_exit << " got: " << exit_code << "]";
 
-            if (result == expected_result) {
+            if (result == expected_result && exit_code == expected_exit) {
                 status = "Pass";
             }
 
@@ -458,10 +460,10 @@ void test_sl(int& test_id, bool debug_mode, ofstream& output){
             exit(EXIT_FAILURE);
         }
 
-        //store/load instructions in the format instr | name | address | result | is_store
+        //store/load instructions in the format instr | name | address | expected_result | expected_exit_code | is_store
         string instr, instr_name, hex_load_address, hex_store_address;
-        int input1, expected_result, is_store;
-        while (instructions >> instr >> instr_name >> hex_load_address >> hex_store_address >> input1 >> expected_result >> is_store) {
+        int input1, expected_result, expected_exit, is_store;
+        while (instructions >> instr >> instr_name >> hex_store_address >> hex_load_address >> input1 >> expected_result >> expected_exit >> is_store) {
             string binary_name = "test/temp/binary.bin";
             binary.open(binary_name.c_str());
             if (!binary.is_open()) {
@@ -549,9 +551,10 @@ void test_sl(int& test_id, bool debug_mode, ofstream& output){
             string hexaddress;
             if (is_store) hexaddress = hex_store_address;
             else  hexaddress = hex_load_address;
-            message << "[, " << instr_name << " " << input1 << " " << hexaddress << " expected: " << expected_result << ", got: " << result << "]";
+            message << ",[ " << instr_name << " " << input1 << " " << hexaddress << " expected: " << expected_result
+            << " got: " << result << "| Expected exit: " << expected_exit << " got: " << exit_code << "]";
 
-            if (result == expected_result) {
+            if (result == expected_result && exit_code == expected_exit) {
                 status = "Pass";
             }
 
@@ -571,10 +574,10 @@ void test_muldiv(int& test_id, bool debug_mode, ofstream& output){
             cout << "muldiv_instructions file not found" << endl;
             exit(EXIT_FAILURE);
         }
-        //load instructions in the format instr | name | input1 | input2 | hi_result | lo_result
+        //load instructions in the format instr | name | input1 | input2 | hi_result | lo_result | expected_exit
         string instr, instr_name;
-        int input1, input2, expected_hi_result, expected_lo_result;
-        while (instructions >> instr >> instr_name >> input1 >> input2 >> expected_hi_result >> expected_lo_result) {
+        int input1, input2, expected_hi_result, expected_lo_result, expected_exit;
+        while (instructions >> instr >> instr_name >> input1 >> input2 >> expected_hi_result >> expected_lo_result >> expected_exit) {
 
             string binary_name = "test/temp/binary.bin";
             binary.open(binary_name.c_str());
@@ -629,9 +632,10 @@ void test_muldiv(int& test_id, bool debug_mode, ofstream& output){
 
             string status = "Fail";
             stringstream message;
-            message << "[, " << input1 << " " << instr_name << " from high " << input2 << " expected: " << expected_hi_result << ", got: " << result << "]";
+            message << ",[ " << input1 << " " << instr_name << " from high " << input2 << " expected: " << expected_hi_result << " got: "
+            << result << "| Expected exit_code " << expected_exit << " got: " << exit_code << "]";
 
-            if (result == expected_hi_result) {
+            if (result == expected_hi_result && exit_code == expected_exit) {
                 status = "Pass";
             }
 
@@ -687,9 +691,10 @@ void test_muldiv(int& test_id, bool debug_mode, ofstream& output){
             status = "Fail";
             message.str( std::string() );
             message.clear();
-            message << "[, " << input1 << " " << instr_name << " from low " << input2 << " expected: " << expected_lo_result << ", got: " << result << "]";
+            message << ",[ " << input1 << " " << instr_name << " from low " << input2 << " expected: " << expected_hi_result << " got: "
+            << result << "| Expected exit_code " << expected_exit << " got: " << exit_code << "]";
 
-            if (result == expected_lo_result) {
+            if (result == expected_lo_result && exit_code == expected_exit) {
                 status = "Pass";
             }
 
@@ -733,7 +738,8 @@ void get_simulator_output(bool debug_mode, int32_t& result, int32_t& exit_code) 
     }
     if (debug_mode) cout << ss.str() << endl;
     status = pclose(fp);
-    exit_code = WEXITSTATUS(status) -256;
+    exit_code = WEXITSTATUS(status);
+    if (exit_code != 0) exit_code-=256;
     if (status == -1) {
          cout << "error closing simulator" << endl;
     }
