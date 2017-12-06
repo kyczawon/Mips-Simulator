@@ -36,57 +36,61 @@ int main(int argc, char* argv[]){
 	int32_t HiLo[2] = {0};
 
 
-////////////////////OLD WAY --> BOOOORING (and incorrect)
-	// //open Binary file
-	// ifstream infile;
-	// infile.open(argv[1]);
+//////////////////OLD WAY --> BOOOORING (and incorrect)
+	//open Binary file
+	ifstream infile;
+	infile.open(argv[1]);
 
 
-	// //if IO error exit with correct exit code
-	// if (!infile.is_open()) {
-	// 	exit(-21);
-	// }
+	//if IO error exit with correct exit code
+	if (!infile.is_open()) {
+		exit(-21);
+	}
 
-	// //load instructions from Binary file into correct location in RAM 
-	// string input;
-	// int32_t offset = ADDR_INSTR;
-	// while (infile >> input) {
-	// 	uint32_t x = bin_string_to_uint32_t(input);
-	// 	instructions.push_back(x);
-	// }
+	//load instructions from Binary file into correct location in RAM 
+	string input;
+	int32_t offset = ADDR_INSTR;
+	while (infile >> input) {
+		uint32_t x = bin_string_to_uint32_t(input);
+		instructions.push_back(x);
+	}
+
+///////////////////////////////////////////////////////////////////////	
+
+
 
 ///////////////////NEW WAY --> 100% SWAG
-	streampos size;
-	char * memblock;
-	//open file with 'binary' attributes
-  	ifstream infile (argv[1], ios::in|ios::binary|ios::ate);
-	//if IO error exit with correct exit code
-	if (!infile.is_open()) exit(-21);
-	//else read the file and store in temporary dinamically allocated array of bytes
-	size = infile.tellg();
-	memblock = new char [size];
-	infile.seekg (0, ios::beg);
-	infile.read (memblock, size);
-	infile.close();
-	//combine bytes and copy instructions in vector
-	uint32_t temp;
-	for(int i = 0; i < size; i += 4){
-		temp = 0;
-		//combine adjacent bytes
-		for(int j = 0; j < 4; j++){
-			cout << "bit " << 4-j << " : " << ((uint16_t)memblock[i+j]) << endl;
-			temp = temp | ((uint8_t)memblock[i + j] << (8 * (3 - j)));
-		}
-		//store in vector
-		cout << "instruction inserted!\n";
-		cout << "instr code: " << temp << endl;
-		instructions.push_back(temp);
-	}
-	//delete temporary array of bytes
-   	delete[] memblock;
-		////	(this version of the I/O protocol with the input file has been implemented later on
-		//// 	but all the simulator relies on the instructions to be stored as 32b words in a vector
-		//// 	that is why we kept the vector as final data structure)
+	// streampos size;
+	// char * memblock;
+	// //open file with 'binary' attributes
+  	// ifstream infile (argv[1], ios::in|ios::binary|ios::ate);
+	// //if IO error exit with correct exit code
+	// if (!infile.is_open()) exit(-21);
+	// //else read the file and store in temporary dinamically allocated array of bytes
+	// size = infile.tellg();
+	// memblock = new char [size];
+	// infile.seekg (0, ios::beg);
+	// infile.read (memblock, size);
+	// infile.close();
+	// //combine bytes and copy instructions in vector
+	// uint32_t temp;
+	// for(int i = 0; i < size; i += 4){
+	// 	temp = 0;
+	// 	//combine adjacent bytes
+	// 	for(int j = 0; j < 4; j++){
+	// 		if (debug_mode) cout << "bit " << 4-j << " : " << ((uint16_t)memblock[i+j]) << endl;
+	// 		temp = temp | ((uint8_t)memblock[i + j] << (8 * (3 - j)));
+	// 	}
+	// 	//store in vector
+	// 	if (debug_mode) cout << "instruction inserted!\n";
+	// 	if (debug_mode) cout << "instr code: " << temp << endl;
+	// 	instructions.push_back(temp);
+	// }
+	// //delete temporary array of bytes
+   	// delete[] memblock;
+	// 	////	(this version of the I/O protocol with the input file has been implemented later on
+	// 	//// 	but all the simulator relies on the instructions to be stored as 32b words in a vector
+	// 	//// 	that is why we kept the vector as final data structure)
 
 
 
@@ -95,17 +99,20 @@ int main(int argc, char* argv[]){
 		if (debug_mode) cout << "pc: " << pc << endl;
 		if (debug_mode) cout << "pc next: " << pc_next << endl;
 		execute(instructions, data, registers, pc, pc_next, HiLo);
+
 		//if 'non-pc-related' instruction has been executed
-		if (pc_next == 0) { //because jr sets pc_next to zero
-			break;
-		} else if (pc_next == pc + 1){
+		if (pc_next == 0) break; //because jr sets pc_next to zero 
+		else if (pc_next == pc + 1){
 			//update pc & pc_next as usual
 			pc++;
 			pc_next++;
+			//if (pc > instructions.size()) exit(-11);
 		}				
 		//if branch/jump has been executed
 		else{
 			if (debug_mode) cout << "entered pc update" << pc << endl;
+			//check that there is an instruction to be executed!
+			//if (pc + 1 > instructions.size()) exit(-11);
 			//execute next instruction because of delay slot
 			execute(instructions, data, registers, ++pc, pc_next, HiLo);
 			//update pc to point to new instruction
@@ -366,6 +373,7 @@ void execute_I (uint32_t instr, uint8_t* data, int32_t (&registers)[32], uint8_t
 			default: exit(-12);
 		}
 	}
+	else exit(-12);
 }
 
 void decode_fields_I (uint32_t &dest_reg, uint32_t &src_reg, int32_t& immediate, const uint32_t &instruction){
@@ -383,7 +391,6 @@ void decode_fields_R (uint32_t &op1, uint32_t &op2, uint32_t &dest_reg, uint32_t
 	dest_reg = (instr << 16) >> 27;
 	shift_amt = (instr << 21) >> 27;
 	funct_code = (instr << 26) >> 26;
-
 }
 
 
