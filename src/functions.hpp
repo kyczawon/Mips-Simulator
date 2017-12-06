@@ -71,7 +71,7 @@ void sw(uint32_t address, uint8_t* data, int32_t value);
 //J type instructions
 void j(uint32_t& instr_index, uint32_t& pc, uint32_t& pc_next);
 void jal(uint32_t& instr_index, int32_t (&registers)[32], uint32_t& pc, uint32_t& pc_next);
-
+    
 //helper functions
 uint32_t bin_string_to_uint32_t(string input);
 void print_registers(int32_t (&registers)[32]);
