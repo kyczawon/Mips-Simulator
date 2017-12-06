@@ -76,7 +76,6 @@ int main(int argc, char* argv[]){
 		}
 	}
 	char exit_result = (char) registers[2];
-	cout << exit_result << endl;
   exit(exit_result);
 }
 

@@ -24,12 +24,12 @@ int main(int argc, char* argv[])
         exit(EXIT_FAILURE);
     }
 
+    test_jr(test_id, debug_mode, output);
     test_R_and_I(test_id, debug_mode, output);
-    // test_sl(test_id, debug_mode, output);
-    // test_muldiv(test_id, debug_mode, output);
-    // test_branch(test_id, debug_mode, output);
-    // test_jr(test_id, debug_mode, output);
-    // test_link_fwd(test_id, debug_mode, output);
+    test_sl(test_id, debug_mode, output);
+    test_muldiv(test_id, debug_mode, output);
+    test_branch(test_id, debug_mode, output);
+    test_link_fwd(test_id, debug_mode, output);
     // test_link_back(test_id, debug_mode, output);
 }
 
@@ -46,12 +46,13 @@ void test_jr(int& test_id, bool debug_mode, ofstream& output){
     //jr $zero
     binary << "00000000000000000000000000001000" << endl;
     binary.close();
-    int32_t result = get_simulator_output(debug_mode);
+    int32_t result=0, exit_code=0;
+    get_simulator_output(debug_mode, result, exit_code);
     string status = "Fail";
     stringstream message;
-    message << "[, jr $zero expected: 49 got: " << result << "]";
+    message << "[, jr $zero expected: -207 got: " << exit_code << "]";
 
-    if (result == 49) {
+    if (exit_code == -207) {
         status = "Pass";
     }
     cout << test_id << ", jr" << ", " << status << ", Alelo " << message.str() << endl;
@@ -90,20 +91,38 @@ void test_link_fwd(int& test_id, bool debug_mode, ofstream& output){
         ss << "0011011000110001" << input1_binary.substr(16, 32) << endl;
         //instruction to test
         ss << instr << endl;
-        //addi $v0 $v0 0x1
-        ss << "00100000010000100000000000000001" << endl;
-        //addi $v0 $v0 0x1
-        ss << "00100000010000100000000000000001" << endl;
+        //addi $s2 $s2 0x1
+        ss << "00100010010100100000000000000001" << endl;
+        //addi $s2 $s2 0x1
+        ss << "00100010010100100000000000000001" << endl;
+        //-----------put word to output-----------
+        //lui t0 0x3000
+        ss << "00111100000010000011000000000000" << endl;
+        //sb s2 0x0004 t0
+        ss << "10100001000100100000000000000100" << endl;
+        //srl s2 s2 0x0008
+        ss << "00000000000100101001001000000010" << endl;
+        //sb s2 0x0004 t0
+        ss << "10100001000100100000000000000100" << endl;
+        //srl s2 s2 0x0008
+        ss << "00000000000100101001001000000010" << endl;
+        //sb s2 0x0004 t0
+        ss << "10100001000100100000000000000100" << endl;
+        //srl s2 s2 0x0008
+        ss << "00000000000100101001001000000010" << endl;
+        //sb s2 0x0004 t0
+        ss << "10100001000100100000000000000100" << endl;
         //jr $zero
         ss << "00000000000000000000000000001000" << endl;
-        //addi $v0 $v0 0x1
-        ss << "00100000010000100000000000000001" << endl;
+        //addi $s2 $s2 0x1
+        ss << "00100010010100100000000000000001" << endl;
         //jr $ra
         ss << "00000011111000000000000000001000";
         binary << ss.str();
         binary.close();
         
-        int32_t result = get_simulator_output(debug_mode);
+        int32_t result=0, exit_code=0;
+        get_simulator_output(debug_mode, result, exit_code);
 
         string status = "Fail";
         stringstream message;
@@ -171,7 +190,9 @@ void test_link_fwd(int& test_id, bool debug_mode, ofstream& output){
 //         binary << ss.str();
 //         binary.close();
         
-//         int32_t result = get_simulator_output(debug_mode);
+
+            // int32_t result=0, exit_code=0;
+            // get_simulator_output(debug_mode, result, exit_code);
 
 //         string status = "Fail";
 //         stringstream message;
@@ -225,16 +246,35 @@ void test_branch(int& test_id, bool debug_mode, ofstream& output){
         ss << "0011011000010000" << input2_binary.substr(16, 32) << endl;
         //instruction to test with offset 2
         ss << instr << "0000000000000010" << endl;
-        //addi $v0 $v0 0x1
-        ss << "00100000010000100000000000000001" << endl;
-        //addi $v0 $v0 0x1
-        ss << "00100000010000100000000000000001" << endl;
+        //addi $s2 $s2 0x1
+        ss << "00100010010100100000000000000001" << endl;
+        //addi $s2 $s2 0x1
+        ss << "00100010010100100000000000000001" << endl;
+        //-----------put word to output-----------
+        //lui t0 0x3000
+        ss << "00111100000010000011000000000000" << endl;
+        //sb s2 0x0004 t0
+        ss << "10100001000100100000000000000100" << endl;
+        //srl s2 s2 0x0008
+        ss << "00000000000100101001001000000010" << endl;
+        //sb s2 0x0004 t0
+        ss << "10100001000100100000000000000100" << endl;
+        //srl s2 s2 0x0008
+        ss << "00000000000100101001001000000010" << endl;
+        //sb s2 0x0004 t0
+        ss << "10100001000100100000000000000100" << endl;
+        //srl s2 s2 0x0008
+        ss << "00000000000100101001001000000010" << endl;
+        //sb s2 0x0004 t0
+        ss << "10100001000100100000000000000100" << endl;
         //jr $zero
         ss << "00000000000000000000000000001000";
         binary << ss.str();
         binary.close();
         
-        int32_t result = get_simulator_output(debug_mode);
+       
+        int32_t result=0, exit_code=0;
+        get_simulator_output(debug_mode, result, exit_code);
 
         string status = "Fail";
         stringstream message;
@@ -267,24 +307,58 @@ void test_branch(int& test_id, bool debug_mode, ofstream& output){
         ss << "0011110000010000" << input2_binary.substr(0, 16) << endl;
         //ori s0 s0 - 16 least significant bits of input 2
         ss << "0011011000010000" << input2_binary.substr(16, 32) << endl;
-        //Beq $zero $zero 0x2
-        ss << "00010000000000000000000000000010" << endl;
+        //Beq $zero $zero 0x10
+        ss << "00010000000000000000000000001010" << endl;
         //addi $s3 $s3 0x0
         ss << "00100010011100110000000000000000" << endl;
+        //-----------put word to output-----------
+        //lui t0 0x3000
+        ss << "00111100000010000011000000000000" << endl;
+        //sb s2 0x0004 t0
+        ss << "10100001000100100000000000000100" << endl;
+        //srl s2 s2 0x0008
+        ss << "00000000000100101001001000000010" << endl;
+        //sb s2 0x0004 t0
+        ss << "10100001000100100000000000000100" << endl;
+        //srl s2 s2 0x0008
+        ss << "00000000000100101001001000000010" << endl;
+        //sb s2 0x0004 t0
+        ss << "10100001000100100000000000000100" << endl;
+        //srl s2 s2 0x0008
+        ss << "00000000000100101001001000000010" << endl;
+        //sb s2 0x0004 t0
+        ss << "10100001000100100000000000000100" << endl;
         //jr $zero
         ss << "00000000000000000000000000001000" << endl;
-        //instruction to test with offset -2
-        ss << instr << "1111111111111110" << endl;
-        //addi $v0 $v0 0x1
-        ss << "00100000010000100000000000000001" << endl;
-        //addi $v0 $v0 0x1
-        ss << "00100000010000100000000000000001" << endl;
+        //instruction to test with offset -10
+        ss << instr << "1111111111110110" << endl;
+        //addi $s2 $s2 0x1
+        ss << "00100010010100100000000000000001" << endl;
+        //addi $s2 $s2 0x1
+        ss << "00100010010100100000000000000001" << endl;
+        //-----------put word to output-----------
+        //lui t0 0x3000
+        ss << "00111100000010000011000000000000" << endl;
+        //sb s2 0x0004 t0
+        ss << "10100001000100100000000000000100" << endl;
+        //srl s2 s2 0x0008
+        ss << "00000000000100101001001000000010" << endl;
+        //sb s2 0x0004 t0
+        ss << "10100001000100100000000000000100" << endl;
+        //srl s2 s2 0x0008
+        ss << "00000000000100101001001000000010" << endl;
+        //sb s2 0x0004 t0
+        ss << "10100001000100100000000000000100" << endl;
+        //srl s2 s2 0x0008
+        ss << "00000000000100101001001000000010" << endl;
+        //sb s2 0x0004 t0
+        ss << "10100001000100100000000000000100" << endl;
         //jr $zero
         ss << "00000000000000000000000000001000";
         binary << ss.str();
         binary.close();
         
-        result = get_simulator_output(debug_mode);
+        get_simulator_output(debug_mode, result, exit_code);
 
         status = "Fail";
         message.str( std::string() );
@@ -356,7 +430,8 @@ void test_R_and_I(int& test_id, bool debug_mode, ofstream& output){
             binary << ss.str();
             binary.close();
             
-            int32_t result = get_simulator_output(debug_mode);
+            int32_t result=0, exit_code=0;
+            get_simulator_output(debug_mode, result, exit_code);
 
             string status = "Fail";
             stringstream message;
@@ -465,7 +540,9 @@ void test_sl(int& test_id, bool debug_mode, ofstream& output){
             binary << ss.str();
             binary.close();
             
-            int32_t result = get_simulator_output(debug_mode);
+            
+            int32_t result=0, exit_code=0;
+            get_simulator_output(debug_mode, result, exit_code);
 
             string status = "Fail";
             stringstream message;
@@ -546,7 +623,9 @@ void test_muldiv(int& test_id, bool debug_mode, ofstream& output){
             binary << ss.str();
             binary.close();
             
-            int32_t result = get_simulator_output(debug_mode);
+            
+            int32_t result=0, exit_code=0;
+            get_simulator_output(debug_mode, result, exit_code);
 
             string status = "Fail";
             stringstream message;
@@ -603,7 +682,7 @@ void test_muldiv(int& test_id, bool debug_mode, ofstream& output){
             binary << ss.str();
             binary.close();
             
-            result = get_simulator_output(debug_mode);
+            get_simulator_output(debug_mode, result, exit_code);
 
             status = "Fail";
             message.str( std::string() );
@@ -621,7 +700,7 @@ void test_muldiv(int& test_id, bool debug_mode, ofstream& output){
         instructions.close();
 }
 
-int32_t get_simulator_output(bool debug_mode) {
+void get_simulator_output(bool debug_mode, int32_t& result, int32_t& exit_code) {
     FILE *fp;
     int status;
     char output[1024];
@@ -637,7 +716,7 @@ int32_t get_simulator_output(bool debug_mode) {
         cout << "error opening simulator" << endl;
     }
 
-    int32_t result = 0;
+    result = 0;
     int count = 0;
     stringstream ss;
     while (fgets(output, 1024, fp) != NULL) {
@@ -654,12 +733,10 @@ int32_t get_simulator_output(bool debug_mode) {
     }
     if (debug_mode) cout << ss.str() << endl;
     status = pclose(fp);
-    int32_t exit_code = WEXITSTATUS(status) -256;
-    cout << "status " << exit_code << endl;
+    exit_code = WEXITSTATUS(status) -256;
     if (status == -1) {
          cout << "error closing simulator" << endl;
     }
-    return result;
 }
 
 void test_line_break(FILE *fp, char* output, int32_t& result, int& count) {
