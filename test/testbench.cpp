@@ -1,6 +1,7 @@
 #include <cstdlib>
 #include <fstream>
 #include <iostream>
+#include <vector>
 #include <string>
 #include <stdint.h>
 #include <cmath>
@@ -24,27 +25,40 @@ int main(int argc, char* argv[])
         exit(EXIT_FAILURE);
     }
 
-    test_jr(test_id, debug_mode, output);
-    test_R_and_I(test_id, debug_mode, output);
-    test_sl(test_id, debug_mode, output);
+    // test_jr(test_id, debug_mode, output);
+    // test_R_and_I(test_id, debug_mode, output);
+    // test_sl(test_id, debug_mode, output);
     test_muldiv(test_id, debug_mode, output);
-    test_branch(test_id, debug_mode, output);
-    test_link_fwd(test_id, debug_mode, output);
+    // test_branch(test_id, debug_mode, output);
+    // test_link_fwd(test_id, debug_mode, output);
 }
 
 void test_jr(int& test_id, bool debug_mode, ofstream& output){
-    ofstream binary;
-    string binary_name = "test/temp/binary.bin";
-    binary.open(binary_name.c_str());
-    if (!binary.is_open()) {
+    ///////////////////WRITE TO BINARY FILE/////////////////
+    //open output file in binary mode
+    ofstream outfile ("test/temp/binary.bin", ofstream::binary);
+    if (!outfile.is_open()) {
         cout << "binary file could not be created" << endl;
         exit(EXIT_FAILURE);
     }
+    // allocate memory for OUTPUT BUFFER --> can it be inferred at runtime? (or hardcoded?)
+    vector<char> instr_bytes;
+    
+    /////FILL BUFFER/////
     //ORI $v0 $v0 0x3631
-    binary << "00110100010000100011011000110001" << endl;
+    populate_vector(instr_bytes, "00110100010000100011011000110001");
     //jr $zero
-    binary << "00000000000000000000000000001000" << endl;
-    binary.close();
+    populate_vector(instr_bytes, "00000000000000000000000000001000");
+    char* buffer = new char[instr_bytes.size()];
+    copy_vector_to_buffer(instr_bytes, buffer);
+
+    // write to outfile
+    outfile.write (buffer,instr_bytes.size());
+    // release dynamically-allocated memory and close output file
+    delete[] buffer;
+    outfile.close();
+    ////////////////////////////////////////////////////////
+
     int32_t result=0, exit_code=0;
     get_simulator_output(debug_mode, result, exit_code);
     string status = "Fail";
@@ -56,6 +70,18 @@ void test_jr(int& test_id, bool debug_mode, ofstream& output){
     }
     cout << test_id << "| jr" << ", " << status << ", Alelo " << message.str() << endl;
     output << test_id << "| jr" << ", " << status << ", Alelo " << message.str() << endl;
+}
+
+void populate_vector(vector<char> &instr_bytes, string instruction){
+    for (int i = 0; i < 4; i++) {
+        instr_bytes.push_back(bin_string_to_char(instruction.substr(8*i,8*(i+1))));
+    }
+}
+
+void copy_vector_to_buffer(const vector<char> &instr_bytes, char* buffer){
+    for (unsigned long i = 0; i < instr_bytes.size(); i++) {
+        buffer[i] = instr_bytes.at(i);
+    }
 }
 
 void test_link_fwd(int& test_id, bool debug_mode, ofstream& output){
@@ -72,53 +98,64 @@ void test_link_fwd(int& test_id, bool debug_mode, ofstream& output){
     string instr, instr_name;
     int input1, input2, expected_result, expected_exit;
     while (instructions >> instr >> instr_name >> input1 >> input2 >> expected_result >> expected_exit) {
-
-        string binary_name = "test/temp/binary.bin";
-        binary.open(binary_name.c_str());
-        if (!binary.is_open()) {
-            cout << "binary file could not be created" << endl;
-            exit(EXIT_FAILURE);
-        }
         //convert input as int to binary string
         string input1_binary = int_to_bin(input1);
         string input2_binary = int_to_bin(input2);
+
+        ///////////////////WRITE TO BINARY FILE/////////////////
+        //open output file in binary mode
+        ofstream outfile ("test/temp/binary.bin", ofstream::binary);
+        if (!outfile.is_open()) {
+            cout << "binary file could not be created" << endl;
+            exit(EXIT_FAILURE);
+        }
+        // allocate memory for OUTPUT BUFFER --> can it be inferred at runtime? (or hardcoded?)
+        vector<char> instr_bytes;
         
-        stringstream ss;
+        /////FILL BUFFER/////
         //lui s1 - 16 most significant bits of input 1
-        ss << "0011110000010001" << input1_binary.substr(0, 16) << endl;
+        populate_vector(instr_bytes, "0011110000010001" + input1_binary.substr(0, 16));
         //ori s1 s1 - 16 least significant bits of input 1
-        ss << "0011011000110001" << input1_binary.substr(16, 32) << endl;
+        populate_vector(instr_bytes, "0011011000110001" + input1_binary.substr(16, 32));
         //instruction to test
-        ss << instr << endl;
+        populate_vector(instr_bytes, instr);
         //addi $s2 $s2 0x1
-        ss << "00100010010100100000000000000001" << endl;
+        populate_vector(instr_bytes, "00100010010100100000000000000001");
         //addi $s2 $s2 0x1
-        ss << "00100010010100100000000000000001" << endl;
+        populate_vector(instr_bytes, "00100010010100100000000000000001");
         //-----------put word to output-----------
         //lui t0 0x3000
-        ss << "00111100000010000011000000000000" << endl;
+        populate_vector(instr_bytes, "00111100000010000011000000000000");
         //sb s2 0x0004 t0
-        ss << "10100001000100100000000000000100" << endl;
+        populate_vector(instr_bytes, "10100001000100100000000000000100");
         //srl s2 s2 0x0008
-        ss << "00000000000100101001001000000010" << endl;
+        populate_vector(instr_bytes, "00000000000100101001001000000010");
         //sb s2 0x0004 t0
-        ss << "10100001000100100000000000000100" << endl;
+        populate_vector(instr_bytes, "10100001000100100000000000000100");
         //srl s2 s2 0x0008
-        ss << "00000000000100101001001000000010" << endl;
+        populate_vector(instr_bytes, "00000000000100101001001000000010");
         //sb s2 0x0004 t0
-        ss << "10100001000100100000000000000100" << endl;
+        populate_vector(instr_bytes, "10100001000100100000000000000100");
         //srl s2 s2 0x0008
-        ss << "00000000000100101001001000000010" << endl;
+        populate_vector(instr_bytes, "00000000000100101001001000000010");
         //sb s2 0x0004 t0
-        ss << "10100001000100100000000000000100" << endl;
+        populate_vector(instr_bytes, "10100001000100100000000000000100");
         //jr $zero
-        ss << "00000000000000000000000000001000" << endl;
+        populate_vector(instr_bytes, "00000000000000000000000000001000");
         //addi $s2 $s2 0x1
-        ss << "00100010010100100000000000000001" << endl;
+        populate_vector(instr_bytes, "00100010010100100000000000000001");
         //jr $ra
-        ss << "00000011111000000000000000001000";
-        binary << ss.str();
-        binary.close();
+        populate_vector(instr_bytes, "00000011111000000000000000001000");
+
+        char* buffer = new char[instr_bytes.size()];
+        copy_vector_to_buffer(instr_bytes, buffer);
+
+        // write to outfile
+        outfile.write (buffer,instr_bytes.size());
+        // release dynamically-allocated memory and close output file
+        delete[] buffer;
+        outfile.close();
+        ////////////////////////////////////////////////////////
         
         int32_t result=0, exit_code=0;
         get_simulator_output(debug_mode, result, exit_code);
@@ -129,8 +166,8 @@ void test_link_fwd(int& test_id, bool debug_mode, ofstream& output){
         if (expected_result == 2) {
             message << " not";
         }
-        message << " execute with exit code: " << expected_exit;
-        if (((expected_result == 2 && result == 2) || (expected_result == 1 && result == 3)) && exit_code == expected_exit) {
+        message << " execute with exit code: " << expected_exit << " got: " << exit_code << "]";
+        if (((expected_result == 2 && result == 2) || (expected_result == 1 && result == 3))) {
             status = "Pass";
         }
 
@@ -167,25 +204,25 @@ void test_link_fwd(int& test_id, bool debug_mode, ofstream& output){
         
 //         stringstream ss;
 //         //lui s1 - 16 most significant bits of input 1
-//         ss << "0011110000010001" << input1_binary.substr(0, 16) << endl;
+//         populate_vector(instr_bytes, "0011110000010001" << input1_binary.substr(0, 16) << endl;
 //         //ori s1 s1 - 16 least significant bits of input 1
-//         ss << "0011011000110001" << input1_binary.substr(16, 32) << endl;
+//         populate_vector(instr_bytes, "0011011000110001" << input1_binary.substr(16, 32) << endl;
 //         //Beq $zero $zero 0x3
-//         ss << "00010000000000000000000000000011" << endl;
+//         populate_vector(instr_bytes, "00010000000000000000000000000011" << endl;
 //         //addi $s3 $s3 0x0
-//         ss << "00100010011100110000000000000000" << endl;
+//         populate_vector(instr_bytes, "00100010011100110000000000000000" << endl;
 //         //addi $v0 $v0 0x1
-//         ss << "00100000010000100000000000000001" << endl;
+//         populate_vector(instr_bytes, "00100000010000100000000000000001" << endl;
 //         //jr $ra
-//         ss << "00000011111000000000000000001000" << endl;
+//         populate_vector(instr_bytes, "00000011111000000000000000001000" << endl;
 //         //instruction to test
-//         ss << instr << endl;
+//         populate_vector(instr_bytes, instr << endl;
 //         //addi $v0 $v0 0x1
-//         ss << "00100000010000100000000000000001" << endl;
+//         populate_vector(instr_bytes, "00100000010000100000000000000001" << endl;
 //         //addi $v0 $v0 0x1
-//         ss << "00100000010000100000000000000001" << endl;
+//         populate_vector(instr_bytes, "00100000010000100000000000000001" << endl;
 //         //jr $zero
-//         ss << "00000000000000000000000000001000";
+//         populate_vector(instr_bytes, "00000000000000000000000000001000";
 //         binary << ss.str();
 //         binary.close();
         
@@ -224,53 +261,64 @@ void test_branch(int& test_id, bool debug_mode, ofstream& output){
     int input1, input2, expected_result, expected_exit;
     while (instructions >> instr >> instr_name >> input1 >> input2 >> expected_result >> expected_exit) {
 
-        string binary_name = "test/temp/binary.bin";
-        binary.open(binary_name.c_str());
-        if (!binary.is_open()) {
-            cout << "binary file could not be created" << endl;
-            exit(EXIT_FAILURE);
-        }
         //convert input as int to binary string
         string input1_binary = int_to_bin(input1);
         string input2_binary = int_to_bin(input2);
+
+        ///////////////////WRITE TO BINARY FILE/////////////////
+        //open output file in binary mode
+        ofstream outfile ("test/temp/binary.bin", ofstream::binary);
+        if (!outfile.is_open()) {
+            cout << "binary file could not be created" << endl;
+            exit(EXIT_FAILURE);
+        }
+        // allocate memory for OUTPUT BUFFER --> can it be inferred at runtime? (or hardcoded?)
+        vector<char> instr_bytes;
         
-        stringstream ss;
+        /////FILL BUFFER/////
         //lui s1 - 16 most significant bits of input 1
-        ss << "0011110000010001" << input1_binary.substr(0, 16) << endl;
+        populate_vector(instr_bytes, "0011110000010001" + input1_binary.substr(0, 16));
         //ori s1 s1 - 16 least significant bits of input 1
-        ss << "0011011000110001" << input1_binary.substr(16, 32) << endl;
+        populate_vector(instr_bytes, "0011011000110001" + input1_binary.substr(16, 32));
         //lui s0 - 16 most significant bits of input 2
-        ss << "0011110000010000" << input2_binary.substr(0, 16) << endl;
+        populate_vector(instr_bytes, "0011110000010000" + input2_binary.substr(0, 16));
         //ori s0 s0 - 16 least significant bits of input 2
-        ss << "0011011000010000" << input2_binary.substr(16, 32) << endl;
+        populate_vector(instr_bytes, "0011011000010000" + input2_binary.substr(16, 32));
         //instruction to test with offset 2
-        ss << instr << "0000000000000010" << endl;
+        populate_vector(instr_bytes, instr + "0000000000000010");
         //addi $s2 $s2 0x1
-        ss << "00100010010100100000000000000001" << endl;
+        populate_vector(instr_bytes, "00100010010100100000000000000001");
         //addi $s2 $s2 0x1
-        ss << "00100010010100100000000000000001" << endl;
+        populate_vector(instr_bytes, "00100010010100100000000000000001");
         //-----------put word to output-----------
         //lui t0 0x3000
-        ss << "00111100000010000011000000000000" << endl;
+        populate_vector(instr_bytes, "00111100000010000011000000000000");
         //sb s2 0x0004 t0
-        ss << "10100001000100100000000000000100" << endl;
+        populate_vector(instr_bytes, "10100001000100100000000000000100");
         //srl s2 s2 0x0008
-        ss << "00000000000100101001001000000010" << endl;
+        populate_vector(instr_bytes, "00000000000100101001001000000010");
         //sb s2 0x0004 t0
-        ss << "10100001000100100000000000000100" << endl;
+        populate_vector(instr_bytes, "10100001000100100000000000000100");
         //srl s2 s2 0x0008
-        ss << "00000000000100101001001000000010" << endl;
+        populate_vector(instr_bytes, "00000000000100101001001000000010");
         //sb s2 0x0004 t0
-        ss << "10100001000100100000000000000100" << endl;
+        populate_vector(instr_bytes, "10100001000100100000000000000100");
         //srl s2 s2 0x0008
-        ss << "00000000000100101001001000000010" << endl;
+        populate_vector(instr_bytes, "00000000000100101001001000000010");
         //sb s2 0x0004 t0
-        ss << "10100001000100100000000000000100" << endl;
+        populate_vector(instr_bytes, "10100001000100100000000000000100");
         //jr $zero
-        ss << "00000000000000000000000000001000";
-        binary << ss.str();
-        binary.close();
-        
+        populate_vector(instr_bytes, "00000000000000000000000000001000");
+
+        char* buffer = new char[instr_bytes.size()];
+        copy_vector_to_buffer(instr_bytes, buffer);
+
+        // write to outfile
+        outfile.write (buffer,instr_bytes.size());
+        // release dynamically-allocated memory and close output file
+        delete[] buffer;
+        outfile.close();
+        ////////////////////////////////////////////////////////
        
         int32_t result=0, exit_code=0;
         get_simulator_output(debug_mode, result, exit_code);
@@ -290,73 +338,84 @@ void test_branch(int& test_id, bool debug_mode, ofstream& output){
         cout << test_id << ", " << instr_name << ", " << status << ", Alelo " << message.str() << endl;
         output << test_id++ << ", " << instr_name << ", " << status << ", Alelo " << message.str() << endl;
         
-        binary.open(binary_name.c_str());
-        if (!binary.is_open()) {
+        ///////////////////WRITE TO BINARY FILE/////////////////
+        //open output file in binary mode
+        ofstream outfile2 ("test/temp/binary.bin", ofstream::binary);
+        if (!outfile2.is_open()) {
             cout << "binary file could not be created" << endl;
             exit(EXIT_FAILURE);
         }
-
-        ss.str( std::string() );
-        ss.clear();
+        // allocate memory for OUTPUT BUFFER --> can it be inferred at runtime? (or hardcoded?)
+        instr_bytes.clear();
+        
+        /////FILL BUFFER/////
         
         //lui s1 - 16 most significant bits of input 1
-        ss << "0011110000010001" << input1_binary.substr(0, 16) << endl;
+        populate_vector(instr_bytes, "0011110000010001" + input1_binary.substr(0, 16));
         //ori s1 s1 - 16 least significant bits of input 1
-        ss << "0011011000110001" << input1_binary.substr(16, 32) << endl;
+        populate_vector(instr_bytes, "0011011000110001" + input1_binary.substr(16, 32));
         //lui s0 - 16 most significant bits of input 2
-        ss << "0011110000010000" << input2_binary.substr(0, 16) << endl;
+        populate_vector(instr_bytes, "0011110000010000" + input2_binary.substr(0, 16));
         //ori s0 s0 - 16 least significant bits of input 2
-        ss << "0011011000010000" << input2_binary.substr(16, 32) << endl;
+        populate_vector(instr_bytes, "0011011000010000" + input2_binary.substr(16, 32));
         //Beq $zero $zero 0x10
-        ss << "00010000000000000000000000001010" << endl;
+        populate_vector(instr_bytes, "00010000000000000000000000001010");
         //addi $s3 $s3 0x0
-        ss << "00100010011100110000000000000000" << endl;
+        populate_vector(instr_bytes, "00100010011100110000000000000000");
         //-----------put word to output-----------
         //lui t0 0x3000
-        ss << "00111100000010000011000000000000" << endl;
+        populate_vector(instr_bytes, "00111100000010000011000000000000");
         //sb s2 0x0004 t0
-        ss << "10100001000100100000000000000100" << endl;
+        populate_vector(instr_bytes, "10100001000100100000000000000100");
         //srl s2 s2 0x0008
-        ss << "00000000000100101001001000000010" << endl;
+        populate_vector(instr_bytes, "00000000000100101001001000000010");
         //sb s2 0x0004 t0
-        ss << "10100001000100100000000000000100" << endl;
+        populate_vector(instr_bytes, "10100001000100100000000000000100");
         //srl s2 s2 0x0008
-        ss << "00000000000100101001001000000010" << endl;
+        populate_vector(instr_bytes, "00000000000100101001001000000010");
         //sb s2 0x0004 t0
-        ss << "10100001000100100000000000000100" << endl;
+        populate_vector(instr_bytes, "10100001000100100000000000000100");
         //srl s2 s2 0x0008
-        ss << "00000000000100101001001000000010" << endl;
+        populate_vector(instr_bytes, "00000000000100101001001000000010");
         //sb s2 0x0004 t0
-        ss << "10100001000100100000000000000100" << endl;
+        populate_vector(instr_bytes, "10100001000100100000000000000100");
         //jr $zero
-        ss << "00000000000000000000000000001000" << endl;
+        populate_vector(instr_bytes, "00000000000000000000000000001000");
         //instruction to test with offset -10
-        ss << instr << "1111111111110110" << endl;
+        populate_vector(instr_bytes, instr + "1111111111110110");
         //addi $s2 $s2 0x1
-        ss << "00100010010100100000000000000001" << endl;
+        populate_vector(instr_bytes, "00100010010100100000000000000001");
         //addi $s2 $s2 0x1
-        ss << "00100010010100100000000000000001" << endl;
+        populate_vector(instr_bytes, "00100010010100100000000000000001");
         //-----------put word to output-----------
         //lui t0 0x3000
-        ss << "00111100000010000011000000000000" << endl;
+        populate_vector(instr_bytes, "00111100000010000011000000000000");
         //sb s2 0x0004 t0
-        ss << "10100001000100100000000000000100" << endl;
+        populate_vector(instr_bytes, "10100001000100100000000000000100");
         //srl s2 s2 0x0008
-        ss << "00000000000100101001001000000010" << endl;
+        populate_vector(instr_bytes, "00000000000100101001001000000010");
         //sb s2 0x0004 t0
-        ss << "10100001000100100000000000000100" << endl;
+        populate_vector(instr_bytes, "10100001000100100000000000000100");
         //srl s2 s2 0x0008
-        ss << "00000000000100101001001000000010" << endl;
+        populate_vector(instr_bytes, "00000000000100101001001000000010");
         //sb s2 0x0004 t0
-        ss << "10100001000100100000000000000100" << endl;
+        populate_vector(instr_bytes, "10100001000100100000000000000100");
         //srl s2 s2 0x0008
-        ss << "00000000000100101001001000000010" << endl;
+        populate_vector(instr_bytes, "00000000000100101001001000000010");
         //sb s2 0x0004 t0
-        ss << "10100001000100100000000000000100" << endl;
+        populate_vector(instr_bytes, "10100001000100100000000000000100");
         //jr $zero
-        ss << "00000000000000000000000000001000";
-        binary << ss.str();
-        binary.close();
+        populate_vector(instr_bytes, "00000000000000000000000000001000");
+
+        char* buffer2 = new char[instr_bytes.size()];
+        copy_vector_to_buffer(instr_bytes, buffer2);
+
+        // write to outfile
+        outfile2.write (buffer2,instr_bytes.size());
+        // release dynamically-allocated memory and close output file
+        delete[] buffer2;
+        outfile2.close();
+        ////////////////////////////////////////////////////////
         
         get_simulator_output(debug_mode, result, exit_code);
 
@@ -364,7 +423,7 @@ void test_branch(int& test_id, bool debug_mode, ofstream& output){
         message.str( std::string() );
         message.clear();
         message << ",[ " << input1 << " " << instr_name << " " << input2 << " expected the branch to execute " << expected_result << " instruction(s) following the branch. The branch executed: "
-        << result << "| Expected exit_code: " << expected_exit << " exit: " << exit_code;
+        << result << "| Expected exit_code: " << expected_exit << " exit: " << exit_code << "]";
         if (result == expected_result && exit_code == expected_exit) {
             status = "Pass";
         }
@@ -388,48 +447,59 @@ void test_R_and_I(int& test_id, bool debug_mode, ofstream& output){
         string instr, instr_name;
         int input1, input2, expected_result, expected_exit;
         while (instructions >> instr >> instr_name >> input1 >> input2 >> expected_result >> expected_exit) {
-
-            string binary_name = "test/temp/binary.bin";
-            binary.open(binary_name.c_str());
-            if (!binary.is_open()) {
-                cout << "binary file could not be created" << endl;
-                exit(EXIT_FAILURE);
-            }
             //convert input as int to binary string
             string input1_binary = int_to_bin(input1);
             string input2_binary = int_to_bin(input2);
+
+            ///////////////////WRITE TO BINARY FILE/////////////////
+            //open output file in binary mode
+            ofstream outfile ("test/temp/binary.bin", ofstream::binary);
+            if (!outfile.is_open()) {
+                cout << "binary file could not be created" << endl;
+                exit(EXIT_FAILURE);
+            }
+            // allocate memory for OUTPUT BUFFER --> can it be inferred at runtime? (or hardcoded?)
+            vector<char> instr_bytes;
             
-            stringstream ss;
+            /////FILL BUFFER/////
             //-----------initialize registers with required values-----------
             //lui s1 - 16 most significant bits of input 1
-            ss << "0011110000010001" << input1_binary.substr(0, 16) << endl;
+            populate_vector(instr_bytes, "0011110000010001" + input1_binary.substr(0, 16));
             //ori s1 s1 - 16 least significant bits of input 1
-            ss << "0011011000110001" << input1_binary.substr(16, 32) << endl;
+            populate_vector(instr_bytes, "0011011000110001" + input1_binary.substr(16, 32));
             //lui s0 - 16 most significant bits of input 2
-            ss << "0011110000010000" << input2_binary.substr(0, 16) << endl;
+            populate_vector(instr_bytes, "0011110000010000" + input2_binary.substr(0, 16));
             //ori s0 s0 - 16 least significant bits of input 2
-            ss << "0011011000010000" << input2_binary.substr(16, 32) << endl;
+            populate_vector(instr_bytes, "0011011000010000" + input2_binary.substr(16, 32));
             //instruction to test
-            ss << instr << endl;
+            populate_vector(instr_bytes, instr);
             //-----------put word to output-----------
             //lui t0 0x3000
-            ss << "00111100000010000011000000000000" << endl;
+            populate_vector(instr_bytes, "00111100000010000011000000000000");
             //sb s2 0x0004 t0
-            ss << "10100001000100100000000000000100" << endl;
+            populate_vector(instr_bytes, "10100001000100100000000000000100");
             //srl s2 s2 0x0008
-            ss << "00000000000100101001001000000010" << endl;
+            populate_vector(instr_bytes, "00000000000100101001001000000010");
             //sb s2 0x0004 t0
-            ss << "10100001000100100000000000000100" << endl;
+            populate_vector(instr_bytes, "10100001000100100000000000000100");
             //srl s2 s2 0x0008
-            ss << "00000000000100101001001000000010" << endl;
+            populate_vector(instr_bytes, "00000000000100101001001000000010");
             //sb s2 0x0004 t0
-            ss << "10100001000100100000000000000100" << endl;
+            populate_vector(instr_bytes, "10100001000100100000000000000100");
             //srl s2 s2 0x0008
-            ss << "00000000000100101001001000000010" << endl;
+            populate_vector(instr_bytes, "00000000000100101001001000000010");
             //sb s2 0x0004 t0
-            ss << "10100001000100100000000000000100" << endl;
-            binary << ss.str();
-            binary.close();
+            populate_vector(instr_bytes, "10100001000100100000000000000100");
+            
+            char* buffer = new char[instr_bytes.size()];
+            copy_vector_to_buffer(instr_bytes, buffer);
+
+            // write to outfile
+            outfile.write (buffer,instr_bytes.size());
+            // release dynamically-allocated memory and close output file
+            delete[] buffer;
+            outfile.close();
+            ////////////////////////////////////////////////////////
             
             int32_t result=0, exit_code=0;
             get_simulator_output(debug_mode, result, exit_code);
@@ -454,115 +524,125 @@ void test_sl(int& test_id, bool debug_mode, ofstream& output){
     ofstream binary;
     ifstream instructions;
     string instructions_name = "test/sl_instructions.txt";
-        instructions.open(instructions_name.c_str());
-        if (!instructions.is_open()) {
-            cout << "sl_instructions file not found" << endl;
+    instructions.open(instructions_name.c_str());
+    if (!instructions.is_open()) {
+        cout << "sl_instructions file not found" << endl;
+        exit(EXIT_FAILURE);
+    }
+
+    //store/load instructions in the format instr | name | address | expected_result | expected_exit_code | is_store
+    string instr, instr_name, hex_load_address, hex_store_address;
+    int input1, expected_result, expected_exit, is_store;
+    while (instructions >> instr >> instr_name >> hex_store_address >> hex_load_address >> input1 >> expected_result >> expected_exit >> is_store) {
+        int load_address = (int)strtol(hex_load_address.c_str(), NULL, 0);
+        int store_address = (int)strtol(hex_store_address.c_str(), NULL, 0);
+        string load_address_binary = int_to_bin(load_address);
+        string store_address_binary = int_to_bin(store_address);
+        string input1_binary = int_to_bin(input1);
+
+        int store_address_init = store_address;
+        while (store_address_init % 4 != 0) {
+            store_address_init--;
+        }
+        string store_address_init_binary = int_to_bin(store_address_init);
+        
+        ///////////////////WRITE TO BINARY FILE/////////////////
+        //open output file in binary mode
+        ofstream outfile ("test/temp/binary.bin", ofstream::binary);
+        if (!outfile.is_open()) {
+            cout << "binary file could not be created" << endl;
             exit(EXIT_FAILURE);
         }
+        // allocate memory for OUTPUT BUFFER --> can it be inferred at runtime? (or hardcoded?)
+        vector<char> instr_bytes;
+        
+        /////FILL BUFFER/////
+        //-----------put msb of address into register accessed by store-----------
+        //lui v1 16 most significant bits of address
+        populate_vector(instr_bytes, "0011110000000011" + store_address_binary.substr(0, 16));
 
-        //store/load instructions in the format instr | name | address | expected_result | expected_exit_code | is_store
-        string instr, instr_name, hex_load_address, hex_store_address;
-        int input1, expected_result, expected_exit, is_store;
-        while (instructions >> instr >> instr_name >> hex_store_address >> hex_load_address >> input1 >> expected_result >> expected_exit >> is_store) {
-            string binary_name = "test/temp/binary.bin";
-            binary.open(binary_name.c_str());
-            if (!binary.is_open()) {
-                cout << "binary file could not be created" << endl;
-                exit(EXIT_FAILURE);
-            }
+        //-----------initialize the word to -1-----------
+        //lui s1 - 16 most significant bits of input 1
+        populate_vector(instr_bytes, "00111100000100011111111111111111");
+        //ori s1 s1 - 16 least significant bits of input 1
+        populate_vector(instr_bytes, "00110110001100011111111111111111");
+        //sw $s1 address (16lsb) v1 (address 16msb)
+        populate_vector(instr_bytes, "1010110001110001" + store_address_init_binary.substr(16, 32));
 
-            int load_address = (int)strtol(hex_load_address.c_str(), NULL, 0);
-            int store_address = (int)strtol(hex_store_address.c_str(), NULL, 0);
-            string load_address_binary = int_to_bin(load_address);
-            string store_address_binary = int_to_bin(store_address);
-            string input1_binary = int_to_bin(input1);
-
-            int store_address_init = store_address;
-            while (store_address_init % 4 != 0) {
-                store_address_init--;
-            }
-            string store_address_init_binary = int_to_bin(store_address_init);
-            
-            stringstream ss;
-            //-----------put msb of address into register accessed by store-----------
-            //lui v1 16 most significant bits of address
-            ss << "0011110000000011" << store_address_binary.substr(0, 16) << endl;
-
-            //-----------initialize the word to -1-----------
-            //lui s1 - 16 most significant bits of input 1
-            ss << "00111100000100011111111111111111" << endl;
-            //ori s1 s1 - 16 least significant bits of input 1
-            ss << "00110110001100011111111111111111" << endl;
-            //sw $s1 address (16lsb) v1 (address 16msb)
-            ss << "1010110001110001" << store_address_init_binary.substr(16, 32) << endl;
-
-            //-----------put value to be stored-----------
-            //lui s0 - 16 most significant bits of input 1
-            ss << "0011110000010000" << input1_binary.substr(0, 16) << endl;
-            //ori s0 s0 - 16 least significant bits of input 1
-            ss << "0011011000010000" << input1_binary.substr(16, 32) << endl;
-            
-            //-----------test store and then load word-----------
-            if (!is_store) { //if load, store a value and test load
-                //lui s2 - 16 most significant bits of input 1
-                ss << "00111100000100101111111111111111" << endl;
-                //ori s2 s2 - 16 least significant bits of input 1
-                ss << "00110110010100101111111111111111" << endl;
-                //sw $s0 address (16lsb) v1 (address 16msb)
-                ss << "1010110001110000" << store_address_binary.substr(16, 32) << endl;
-                //load_instruction to test with 16 least significant bits of address as immiediate
-                //load_instruction $s2 address (16lsb) v1 (address 16msb)
-                ss << instr << "0001110010" << load_address_binary.substr(16, 32) << endl;
-            }
-            if (is_store) { //if store, test store and load back
-                //store_instruction to test with 16 least significant bits of address as immiediate
-                //store_instruction $s0 address (16lsb) v1 (address 16msb)
-                ss << instr << "0001110000" << store_address_binary.substr(16, 32) << endl;
-                //lw $s2 address (16lsb) v1 (address 16msb)
-                ss << "1000110001110010" << load_address_binary.substr(16, 32) << endl;
-            }
-            
-            //-----------put word to output-----------
-            //lui t0 0x3000
-            ss << "00111100000010000011000000000000" << endl;
-            //sb s2 0x0004 t0
-            ss << "10100001000100100000000000000100" << endl;
-            //srl s2 s2 0x0008
-            ss << "00000000000100101001001000000010" << endl;
-            //sb s2 0x0004 t0
-            ss << "10100001000100100000000000000100" << endl;
-            //srl s2 s2 0x0008
-            ss << "00000000000100101001001000000010" << endl;
-            //sb s2 0x0004 t0
-            ss << "10100001000100100000000000000100" << endl;
-            //srl s2 s2 0x0008
-            ss << "00000000000100101001001000000010" << endl;
-            //sb s2 0x0004 t0
-            ss << "10100001000100100000000000000100" << endl;
-            binary << ss.str();
-            binary.close();
-            
-            
-            int32_t result=0, exit_code=0;
-            get_simulator_output(debug_mode, result, exit_code);
-
-            string status = "Fail";
-            stringstream message;
-            string hexaddress;
-            if (is_store) hexaddress = hex_store_address;
-            else  hexaddress = hex_load_address;
-            message << ",[ " << instr_name << " " << input1 << " " << hexaddress << " expected: " << expected_result
-            << " got: " << result << "| Expected exit: " << expected_exit << " got: " << exit_code << "]";
-
-            if (result == expected_result && exit_code == expected_exit) {
-                status = "Pass";
-            }
-
-            cout << test_id << ", " << instr_name << ", " << status << ", Alelo " << message.str() << endl;
-            output << test_id++ << ", " << instr_name << ", " << status << ", Alelo " << message.str() << endl;
-            
+        //-----------put value to be stored-----------
+        //lui s0 - 16 most significant bits of input 1
+        populate_vector(instr_bytes, "0011110000010000" + input1_binary.substr(0, 16));
+        //ori s0 s0 - 16 least significant bits of input 1
+        populate_vector(instr_bytes, "0011011000010000" + input1_binary.substr(16, 32));
+        
+        //-----------test store and then load word-----------
+        if (!is_store) { //if load, store a value and test load
+            //lui s2 - 16 most significant bits of input 1
+            populate_vector(instr_bytes, "00111100000100101111111111111111");
+            //ori s2 s2 - 16 least significant bits of input 1
+            populate_vector(instr_bytes, "00110110010100101111111111111111");
+            //sw $s0 address (16lsb) v1 (address 16msb)
+            populate_vector(instr_bytes, "1010110001110000" + store_address_binary.substr(16, 32));
+            //load_instruction to test with 16 least significant bits of address as immiediate
+            //load_instruction $s2 address (16lsb) v1 (address 16msb)
+            populate_vector(instr_bytes, instr + "0001110010" + load_address_binary.substr(16, 32));
         }
-        instructions.close();
+        if (is_store) { //if store, test store and load back
+            //store_instruction to test with 16 least significant bits of address as immiediate
+            //store_instruction $s0 address (16lsb) v1 (address 16msb)
+            populate_vector(instr_bytes, instr + "0001110000" + store_address_binary.substr(16, 32));
+            //lw $s2 address (16lsb) v1 (address 16msb)
+            populate_vector(instr_bytes, "1000110001110010" + load_address_binary.substr(16, 32));
+        }
+        
+        //-----------put word to output-----------
+        //lui t0 0x3000
+        populate_vector(instr_bytes, "00111100000010000011000000000000");
+        //sb s2 0x0004 t0
+        populate_vector(instr_bytes, "10100001000100100000000000000100");
+        //srl s2 s2 0x0008
+        populate_vector(instr_bytes, "00000000000100101001001000000010");
+        //sb s2 0x0004 t0
+        populate_vector(instr_bytes, "10100001000100100000000000000100");
+        //srl s2 s2 0x0008
+        populate_vector(instr_bytes, "00000000000100101001001000000010");
+        //sb s2 0x0004 t0
+        populate_vector(instr_bytes, "10100001000100100000000000000100");
+        //srl s2 s2 0x0008
+        populate_vector(instr_bytes, "00000000000100101001001000000010");
+        //sb s2 0x0004 t0
+        populate_vector(instr_bytes, "10100001000100100000000000000100");
+
+        char* buffer = new char[instr_bytes.size()];
+        copy_vector_to_buffer(instr_bytes, buffer);
+
+        // write to outfile
+        outfile.write (buffer,instr_bytes.size());
+        // release dynamically-allocated memory and close output file
+        delete[] buffer;
+        outfile.close();
+        ////////////////////////////////////////////////////////
+        
+        int32_t result=0, exit_code=0;
+        get_simulator_output(debug_mode, result, exit_code);
+
+        string status = "Fail";
+        stringstream message;
+        string hexaddress;
+        if (is_store) hexaddress = hex_store_address;
+        else  hexaddress = hex_load_address;
+        message << ",[ " << instr_name << " " << input1 << " " << hexaddress << expected_result
+        << " got: " << result << "| Expected exit: " << expected_exit << " got: " << exit_code << "]";
+
+        if (result == expected_result && exit_code == expected_exit) {
+            status = "Pass";
+        }
+
+        cout << test_id << ", " << instr_name << ", " << status << ", Alelo " << message.str() << endl;
+        output << test_id++ << ", " << instr_name << ", " << status << ", Alelo " << message.str() << endl;
+        
+    }
+    instructions.close();
 }
 
 void test_muldiv(int& test_id, bool debug_mode, ofstream& output){
@@ -578,54 +658,63 @@ void test_muldiv(int& test_id, bool debug_mode, ofstream& output){
         string instr, instr_name;
         int input1, input2, expected_hi_result, expected_lo_result, expected_exit;
         while (instructions >> instr >> instr_name >> input1 >> input2 >> expected_hi_result >> expected_lo_result >> expected_exit) {
-
-            string binary_name = "test/temp/binary.bin";
-            binary.open(binary_name.c_str());
-            if (!binary.is_open()) {
-                cout << "binary file could not be created" << endl;
-                exit(EXIT_FAILURE);
-            }
             //convert input as int to binary string
             string input1_binary = int_to_bin(input1);
             string input2_binary = int_to_bin(input2);
             
-            stringstream ss;
+            ///////////////////WRITE TO BINARY FILE/////////////////
+            //open output file in binary mode
+            ofstream outfile ("test/temp/binary.bin", ofstream::binary);
+            if (!outfile.is_open()) {
+                cout << "binary file could not be created" << endl;
+                exit(EXIT_FAILURE);
+            }
+            // allocate memory for OUTPUT BUFFER --> can it be inferred at runtime? (or hardcoded?)
+            vector<char> instr_bytes;
+            
+            /////FILL BUFFER/////
             //-----------initialize registers with required values-----------
             //lui s1 - 16 most significant bits of input 1
-            ss << "0011110000010001" << input2_binary.substr(0, 16) << endl;
+            populate_vector(instr_bytes, "0011110000010001" + input2_binary.substr(0, 16));
             //ori s1 s1 - 16 least significant bits of input 1
-            ss << "0011011000110001" << input2_binary.substr(16, 32) << endl;
+            populate_vector(instr_bytes, "0011011000110001" + input2_binary.substr(16, 32));
             //lui s0 - 16 most significant bits of input 2
-            ss << "0011110000010000" << input1_binary.substr(0, 16) << endl;
+            populate_vector(instr_bytes, "0011110000010000" + input1_binary.substr(0, 16));
             //ori s0 s0 - 16 least significant bits of input 2
-            ss << "0011011000010000" << input1_binary.substr(16, 32) << endl;
+            populate_vector(instr_bytes, "0011011000010000" + input1_binary.substr(16, 32));
             //instruction to test
-            ss << "00000010000100010000000000" << instr << endl;
+            populate_vector(instr_bytes, "00000010000100010000000000" + instr);
 
             //mfhi s2
-            ss << "00000000000000001001000000010000" << endl;
+            populate_vector(instr_bytes, "00000000000000001001000000010000");
 
             //-----------put word s2 to output-----------
             //lui t0 0x3000
-            ss << "00111100000010000011000000000000" << endl;
+            populate_vector(instr_bytes, "00111100000010000011000000000000");
             //sb s2 0x0004 t0
-            ss << "10100001000100100000000000000100" << endl;
+            populate_vector(instr_bytes, "10100001000100100000000000000100");
             //srl s2 s2 0x0008
-            ss << "00000000000100101001001000000010" << endl;
+            populate_vector(instr_bytes, "00000000000100101001001000000010");
             //sb s2 0x0004 t0
-            ss << "10100001000100100000000000000100" << endl;
+            populate_vector(instr_bytes, "10100001000100100000000000000100");
             //srl s2 s2 0x0008
-            ss << "00000000000100101001001000000010" << endl;
+            populate_vector(instr_bytes, "00000000000100101001001000000010");
             //sb s2 0x0004 t0
-            ss << "10100001000100100000000000000100" << endl;
+            populate_vector(instr_bytes, "10100001000100100000000000000100");
             //srl s2 s2 0x0008
-            ss << "00000000000100101001001000000010" << endl;
+            populate_vector(instr_bytes, "00000000000100101001001000000010");
             //sb s2 0x0004 t0
-            ss << "10100001000100100000000000000100" << endl;
+            populate_vector(instr_bytes, "10100001000100100000000000000100");
 
-            binary << ss.str();
-            binary.close();
-            
+            char* buffer = new char[instr_bytes.size()];
+            copy_vector_to_buffer(instr_bytes, buffer);
+
+            // write to outfile
+            outfile.write (buffer,instr_bytes.size());
+            // release dynamically-allocated memory and close output file
+            delete[] buffer;
+            outfile.close();
+            ////////////////////////////////////////////////////////
             
             int32_t result=0, exit_code=0;
             get_simulator_output(debug_mode, result, exit_code);
@@ -642,56 +731,65 @@ void test_muldiv(int& test_id, bool debug_mode, ofstream& output){
             cout << test_id << ", " << instr_name << ", " << status << ", Alelo " << message.str() << endl;
             output << test_id++ << ", " << instr_name << ", " << status << ", Alelo " << message.str() << endl;
 
-            binary.open(binary_name.c_str());
-            if (!binary.is_open()) {
+            ///////////////////WRITE TO BINARY FILE/////////////////
+            //open output file in binary mode
+            ofstream outfile2 ("test/temp/binary.bin", ofstream::binary);
+            if (!outfile2.is_open()) {
                 cout << "binary file could not be created" << endl;
                 exit(EXIT_FAILURE);
             }
-
-            ss.str( std::string() );
-            ss.clear();
-
+            // allocate memory for OUTPUT BUFFER --> can it be inferred at runtime? (or hardcoded?)
+            instr_bytes.clear();
+            
+            /////FILL BUFFER/////
             //-----------initialize registers with required values-----------
             //lui s1 - 16 most significant bits of input 1
-            ss << "0011110000010001" << input2_binary.substr(0, 16) << endl;
+            populate_vector(instr_bytes, "0011110000010001" + input2_binary.substr(0, 16));
             //ori s1 s1 - 16 least significant bits of input 1
-            ss << "0011011000110001" << input2_binary.substr(16, 32) << endl;
+            populate_vector(instr_bytes, "0011011000110001" + input2_binary.substr(16, 32));
             //lui s0 - 16 most significant bits of input 2
-            ss << "0011110000010000" << input1_binary.substr(0, 16) << endl;
+            populate_vector(instr_bytes, "0011110000010000" + input1_binary.substr(0, 16));
             //ori s0 s0 - 16 least significant bits of input 2
-            ss << "0011011000010000" << input1_binary.substr(16, 32) << endl;
+            populate_vector(instr_bytes, "0011011000010000" + input1_binary.substr(16, 32));
             //instruction to test
-            ss << "00000010000100010000000000" << instr << endl;
+            populate_vector(instr_bytes, "00000010000100010000000000" + instr);
 
             //mflo s2
-            ss << "00000000000000001001000000010010" << endl;
+            populate_vector(instr_bytes, "00000000000000001001000000010010");
             //-----------put word s2 to output-----------
             //lui t0 0x3000
-            ss << "00111100000010000011000000000000" << endl;
+            populate_vector(instr_bytes, "00111100000010000011000000000000");
             //sb s2 0x0004 t0
-            ss << "10100001000100100000000000000100" << endl;
+            populate_vector(instr_bytes, "10100001000100100000000000000100");
             //srl s2 s2 0x0008
-            ss << "00000000000100101001001000000010" << endl;
+            populate_vector(instr_bytes, "00000000000100101001001000000010");
             //sb s2 0x0004 t0
-            ss << "10100001000100100000000000000100" << endl;
+            populate_vector(instr_bytes, "10100001000100100000000000000100");
             //srl s2 s2 0x0008
-            ss << "00000000000100101001001000000010" << endl;
+            populate_vector(instr_bytes, "00000000000100101001001000000010");
             //sb s2 0x0004 t0
-            ss << "10100001000100100000000000000100" << endl;
+            populate_vector(instr_bytes, "10100001000100100000000000000100");
             //srl s2 s2 0x0008
-            ss << "00000000000100101001001000000010" << endl;
+            populate_vector(instr_bytes, "00000000000100101001001000000010");
             //sb s2 0x0004 t0
-            ss << "10100001000100100000000000000100" << endl;
+            populate_vector(instr_bytes, "10100001000100100000000000000100");
             
-            binary << ss.str();
-            binary.close();
+            char* buffer2 = new char[instr_bytes.size()];
+            copy_vector_to_buffer(instr_bytes, buffer2);
+
+            // write to outfile
+            outfile2.write (buffer2,instr_bytes.size());
+            // release dynamically-allocated memory and close output file
+            delete[] buffer2;
+            outfile2.close();
+            ////////////////////////////////////////////////////////
             
             get_simulator_output(debug_mode, result, exit_code);
 
             status = "Fail";
             message.str( std::string() );
             message.clear();
-            message << ",[ " << input1 << " " << instr_name << " from low " << input2 << " expected: " << expected_hi_result << " got: "
+            message << ",[ " << input1 << " " << instr_name << " from low " << input2 << " expected: " << expected_lo_result << " got: "
             << result << "| Expected exit_code " << expected_exit << " got: " << exit_code << "]";
 
             if (result == expected_lo_result && exit_code == expected_exit) {
@@ -775,4 +873,17 @@ string int_to_bin(int value) {
         }
     }
     return bin;
+}
+
+char bin_string_to_char(string input) {
+	char x = 0;
+    if (input[0] == '1'){
+			x -= pow (2, 7);
+	}
+	for (char i = 1; i < 8; i++) {
+		if (input[i] == '1'){
+			x += pow (2, 7-i);
+		}
+	}
+	return x;
 }
