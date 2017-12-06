@@ -328,6 +328,8 @@ void execute_I (uint32_t instr, uint8_t* data, int32_t (&registers)[32], uint8_t
 			default: exit(-12);
 		}
 	}
+	//invalid instruction
+	else exit(-12);
 }
 
 void decode_fields_I (uint32_t &dest_reg, uint32_t &src_reg, int32_t& immediate, const uint32_t &instruction){
@@ -818,9 +820,11 @@ void sw(uint32_t address, uint8_t* data, int32_t value){
 void j(uint32_t& instr_index, uint32_t& pc, uint32_t& pc_next){
 	uint32_t temp = pc << 2;
 	pc_next = (((temp & 0xF0000000) | (instr_index << 2)) >> 2);
+	if (debug_mode) cout << "instr_index" << instr_index << endl;
 }
 
 void jal(uint32_t& instr_index, int32_t (&registers)[32], uint32_t& pc, uint32_t& pc_next){
+	if (debug_mode) cout << "entered jal" << endl;
 	//link return address in register 31
 	registers[31]  = pc + 2;
 	//execute normal j
