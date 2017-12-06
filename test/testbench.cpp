@@ -24,11 +24,13 @@ int main(int argc, char* argv[])
         exit(EXIT_FAILURE);
     }
 
-    // test_R_and_I(test_id, debug_mode, output);
+    test_R_and_I(test_id, debug_mode, output);
     // test_sl(test_id, debug_mode, output);
     // test_muldiv(test_id, debug_mode, output);
-    test_branch(test_id, debug_mode, output);
+    // test_branch(test_id, debug_mode, output);
     // test_jr(test_id, debug_mode, output);
+    // test_link_fwd(test_id, debug_mode, output);
+    // test_link_back(test_id, debug_mode, output);
 }
 
 void test_jr(int& test_id, bool debug_mode, ofstream& output){
@@ -56,114 +58,246 @@ void test_jr(int& test_id, bool debug_mode, ofstream& output){
     output << test_id << ", jr" << ", " << status << ", Alelo " << message.str() << endl;
 }
 
+void test_link_fwd(int& test_id, bool debug_mode, ofstream& output){
+    ofstream binary;
+    ifstream instructions;
+    string instructions_name = "test/link_instructions.txt";
+    instructions.open(instructions_name.c_str());
+    if (!instructions.is_open()) {
+        cout << "link_instructions.txt file not found" << endl;
+        exit(EXIT_FAILURE);
+    }
+    //load instructions in the format instr | name | input1 | input2 | expected_result (1 = branch, 2= no branch)
+    //instr must have the offset set to 
+    string instr, instr_name;
+    int input1, input2, expected_result;
+    while (instructions >> instr >> instr_name >> input1 >> input2 >> expected_result) {
+
+        string binary_name = "test/temp/binary.bin";
+        binary.open(binary_name.c_str());
+        if (!binary.is_open()) {
+            cout << "binary file could not be created" << endl;
+            exit(EXIT_FAILURE);
+        }
+        //convert input as int to binary string
+        string input1_binary = int_to_bin(input1);
+        string input2_binary = int_to_bin(input2);
+        
+        stringstream ss;
+        //lui s1 - 16 most significant bits of input 1
+        ss << "0011110000010001" << input1_binary.substr(0, 16) << endl;
+        //ori s1 s1 - 16 least significant bits of input 1
+        ss << "0011011000110001" << input1_binary.substr(16, 32) << endl;
+        //instruction to test
+        ss << instr << endl;
+        //addi $v0 $v0 0x1
+        ss << "00100000010000100000000000000001" << endl;
+        //addi $v0 $v0 0x1
+        ss << "00100000010000100000000000000001" << endl;
+        //jr $zero
+        ss << "00000000000000000000000000001000" << endl;
+        //addi $v0 $v0 0x1
+        ss << "00100000010000100000000000000001" << endl;
+        //jr $ra
+        ss << "00000011111000000000000000001000";
+        binary << ss.str();
+        binary.close();
+        
+        int32_t result = get_simulator_output(debug_mode);
+
+        string status = "Fail";
+        stringstream message;
+        message << "[, " << input1 << " " << instr_name << " " << input2 << " expected the branch to";
+        if (expected_result == 2) {
+            message << " not";
+        }
+        message << " execute] " << result;
+        if ((expected_result == 2 && result == 2) || (expected_result == 1 && result == 3)) {
+            status = "Pass";
+        }
+
+        cout << test_id << ", " << instr_name << ", " << status << ", Alelo " << message.str() << endl;
+        output << test_id++ << ", " << instr_name << ", " << status << ", Alelo " << message.str() << endl;
+    }
+    instructions.close();
+}
+
+// void test_link_back(int& test_id, bool debug_mode, ofstream& output){
+//     ofstream binary;
+//     ifstream instructions;
+//     string instructions_name = "test/link_back_instructions.txt";
+//     instructions.open(instructions_name.c_str());
+//     if (!instructions.is_open()) {
+//         cout << "link_back_instructions.txt file not found" << endl;
+//         exit(EXIT_FAILURE);
+//     }
+//     //load instructions in the format instr | name | input1 | input2 | expected_result (1 = branch, 2= no branch)
+//     //instr must have the offset set to 
+//     string instr, instr_name;
+//     int input1, input2, expected_result;
+//     while (instructions >> instr >> instr_name >> input1 >> input2 >> expected_result) {
+
+//         string binary_name = "test/temp/binary.bin";
+//         binary.open(binary_name.c_str());
+//         if (!binary.is_open()) {
+//             cout << "binary file could not be created" << endl;
+//             exit(EXIT_FAILURE);
+//         }
+//         //convert input as int to binary string
+//         string input1_binary = int_to_bin(input1);
+//         string input2_binary = int_to_bin(input2);
+        
+//         stringstream ss;
+//         //lui s1 - 16 most significant bits of input 1
+//         ss << "0011110000010001" << input1_binary.substr(0, 16) << endl;
+//         //ori s1 s1 - 16 least significant bits of input 1
+//         ss << "0011011000110001" << input1_binary.substr(16, 32) << endl;
+//         //Beq $zero $zero 0x3
+//         ss << "00010000000000000000000000000011" << endl;
+//         //addi $s3 $s3 0x0
+//         ss << "00100010011100110000000000000000" << endl;
+//         //addi $v0 $v0 0x1
+//         ss << "00100000010000100000000000000001" << endl;
+//         //jr $ra
+//         ss << "00000011111000000000000000001000" << endl;
+//         //instruction to test
+//         ss << instr << endl;
+//         //addi $v0 $v0 0x1
+//         ss << "00100000010000100000000000000001" << endl;
+//         //addi $v0 $v0 0x1
+//         ss << "00100000010000100000000000000001" << endl;
+//         //jr $zero
+//         ss << "00000000000000000000000000001000";
+//         binary << ss.str();
+//         binary.close();
+        
+//         int32_t result = get_simulator_output(debug_mode);
+
+//         string status = "Fail";
+//         stringstream message;
+//         message << "[, " << input1 << " " << instr_name << " " << input2 << " expected the branch to";
+//         if (expected_result == 2) {
+//             message << " not";
+//         }
+//         message << " execute] " << result;
+//         if ((expected_result == 2 && result == 2) || (expected_result == 1 && result == 3)) {
+//             status = "Pass";
+//         }
+
+//         cout << test_id << ", " << instr_name << ", " << status << ", Alelo " << message.str() << endl;
+//         output << test_id++ << ", " << instr_name << ", " << status << ", Alelo " << message.str() << endl;
+//     }
+//     instructions.close();
+// }
+
 void test_branch(int& test_id, bool debug_mode, ofstream& output){
     ofstream binary;
     ifstream instructions;
     string instructions_name = "test/brj_instructions.txt";
-        instructions.open(instructions_name.c_str());
-        if (!instructions.is_open()) {
-            cout << "brj_instructions.txt file not found" << endl;
+    instructions.open(instructions_name.c_str());
+    if (!instructions.is_open()) {
+        cout << "brj_instructions.txt file not found" << endl;
+        exit(EXIT_FAILURE);
+    }
+    //load instructions in the format instr | name | input1 | input2 | expected_result (1 = branch, 2= no branch)
+    string instr, instr_name;
+    int input1, input2, expected_result;
+    while (instructions >> instr >> instr_name >> input1 >> input2 >> expected_result) {
+
+        string binary_name = "test/temp/binary.bin";
+        binary.open(binary_name.c_str());
+        if (!binary.is_open()) {
+            cout << "binary file could not be created" << endl;
             exit(EXIT_FAILURE);
         }
-        //load instructions in the format instr | name | input1 | input2 | expected_result 
-        string instr, instr_name;
-        int input1, input2, expected_result;
-        while (instructions >> instr >> instr_name >> input1 >> input2 >> expected_result) {
+        //convert input as int to binary string
+        string input1_binary = int_to_bin(input1);
+        string input2_binary = int_to_bin(input2);
+        
+        stringstream ss;
+        //lui s1 - 16 most significant bits of input 1
+        ss << "0011110000010001" << input1_binary.substr(0, 16) << endl;
+        //ori s1 s1 - 16 least significant bits of input 1
+        ss << "0011011000110001" << input1_binary.substr(16, 32) << endl;
+        //lui s0 - 16 most significant bits of input 2
+        ss << "0011110000010000" << input2_binary.substr(0, 16) << endl;
+        //ori s0 s0 - 16 least significant bits of input 2
+        ss << "0011011000010000" << input2_binary.substr(16, 32) << endl;
+        //instruction to test with offset 2
+        ss << instr << "0000000000000010" << endl;
+        //addi $v0 $v0 0x1
+        ss << "00100000010000100000000000000001" << endl;
+        //addi $v0 $v0 0x1
+        ss << "00100000010000100000000000000001" << endl;
+        //jr $zero
+        ss << "00000000000000000000000000001000";
+        binary << ss.str();
+        binary.close();
+        
+        int32_t result = get_simulator_output(debug_mode);
 
-            string binary_name = "test/temp/binary.bin";
-            binary.open(binary_name.c_str());
-            if (!binary.is_open()) {
-                cout << "binary file could not be created" << endl;
-                exit(EXIT_FAILURE);
-            }
-            //convert input as int to binary string
-            string input1_binary = int_to_bin(input1);
-            string input2_binary = int_to_bin(input2);
-            
-            stringstream ss;
-            //lui s1 - 16 most significant bits of input 1
-            ss << "0011110000010001" << input1_binary.substr(0, 16) << endl;
-            //ori s1 s1 - 16 least significant bits of input 1
-            ss << "0011011000110001" << input1_binary.substr(16, 32) << endl;
-            //lui s0 - 16 most significant bits of input 2
-            ss << "0011110000010000" << input2_binary.substr(0, 16) << endl;
-            //ori s0 s0 - 16 least significant bits of input 2
-            ss << "0011011000010000" << input2_binary.substr(16, 32) << endl;
-            //instruction to test with offset 2
-            ss << instr << "0000000000000010" << endl;
-            //addi $v0 $v0 0x1
-            ss << "00100000010000100000000000000001" << endl;
-            //addi $v0 $v0 0x1
-            ss << "00100000010000100000000000000001" << endl;
-            //jr $zero
-            ss << "00000000000000000000000000001000";
-            binary << ss.str();
-            binary.close();
-            
-            int32_t result = get_simulator_output(debug_mode);
-
-            string status = "Fail";
-            stringstream message;
-            message << "[, " << input1 << " " << instr_name << " " << input2 << " expected the branch to execute " << expected_result << " instruction(s) following the branch. The branch executed: " << result;
-            if (instr_name == "beq") {
-                message << ", IF THIS INSTRUCTION FAILS, ALL BACKWARD BRANCHES WILL FAIL";
-            } 
-            message << "]";
-            if (result == expected_result) {
-                status = "Pass";
-            }
-
-            cout << test_id << ", " << instr_name << ", " << status << ", Alelo " << message.str() << endl;
-            output << test_id++ << ", " << instr_name << ", " << status << ", Alelo " << message.str() << endl;
-            
-            binary.open(binary_name.c_str());
-            if (!binary.is_open()) {
-                cout << "binary file could not be created" << endl;
-                exit(EXIT_FAILURE);
-            }
-
-            ss.str( std::string() );
-            ss.clear();
-            
-            //lui s1 - 16 most significant bits of input 1
-            ss << "0011110000010001" << input1_binary.substr(0, 16) << endl;
-            //ori s1 s1 - 16 least significant bits of input 1
-            ss << "0011011000110001" << input1_binary.substr(16, 32) << endl;
-            //lui s0 - 16 most significant bits of input 2
-            ss << "0011110000010000" << input2_binary.substr(0, 16) << endl;
-            //ori s0 s0 - 16 least significant bits of input 2
-            ss << "0011011000010000" << input2_binary.substr(16, 32) << endl;
-            //Beq $zero $zero 0x2
-            ss << "00010000000000000000000000000010" << endl;
-            //addi $s3 $s3 0x0
-            ss << "00100010011100110000000000000000" << endl;
-            //jr $zero
-            ss << "00000000000000000000000000001000" << endl;
-            //instruction to test with offset -2
-            ss << instr << "1111111111111110" << endl;
-            //addi $v0 $v0 0x1
-            ss << "00100000010000100000000000000001" << endl;
-            //addi $v0 $v0 0x1
-            ss << "00100000010000100000000000000001" << endl;
-            //jr $zero
-            ss << "00000000000000000000000000001000";
-            binary << ss.str();
-            binary.close();
-            
-            result = get_simulator_output(debug_mode);
-
-            status = "Fail";
-            message.str( std::string() );
-            message.clear();
-            message << "[, When branching backwards, " << input1 << " " << instr_name << " " << input2 << " expected the branch to execute " << expected_result << " instruction(s) following the branch. The branch executed: " << result << "]";
-            if (result == expected_result) {
-                status = "Pass";
-            }
-
-            cout << test_id << ", " << instr_name << ", " << status << ", Alelo " << message.str() << endl;
-            output << test_id++ << ", " << instr_name << ", " << status << ", Alelo " << message.str() << endl;
+        string status = "Fail";
+        stringstream message;
+        message << "[, " << input1 << " " << instr_name << " " << input2 << " expected the branch to execute " << expected_result << " instruction(s) following the branch. The branch executed: " << result;
+        if (instr_name == "beq") {
+            message << ", IF THIS INSTRUCTION FAILS, ALL BACKWARD BRANCHES WILL FAIL";
+        } 
+        message << "]";
+        if (result == expected_result) {
+            status = "Pass";
         }
-        instructions.close();
+
+        cout << test_id << ", " << instr_name << ", " << status << ", Alelo " << message.str() << endl;
+        output << test_id++ << ", " << instr_name << ", " << status << ", Alelo " << message.str() << endl;
+        
+        binary.open(binary_name.c_str());
+        if (!binary.is_open()) {
+            cout << "binary file could not be created" << endl;
+            exit(EXIT_FAILURE);
+        }
+
+        ss.str( std::string() );
+        ss.clear();
+        
+        //lui s1 - 16 most significant bits of input 1
+        ss << "0011110000010001" << input1_binary.substr(0, 16) << endl;
+        //ori s1 s1 - 16 least significant bits of input 1
+        ss << "0011011000110001" << input1_binary.substr(16, 32) << endl;
+        //lui s0 - 16 most significant bits of input 2
+        ss << "0011110000010000" << input2_binary.substr(0, 16) << endl;
+        //ori s0 s0 - 16 least significant bits of input 2
+        ss << "0011011000010000" << input2_binary.substr(16, 32) << endl;
+        //Beq $zero $zero 0x2
+        ss << "00010000000000000000000000000010" << endl;
+        //addi $s3 $s3 0x0
+        ss << "00100010011100110000000000000000" << endl;
+        //jr $zero
+        ss << "00000000000000000000000000001000" << endl;
+        //instruction to test with offset -2
+        ss << instr << "1111111111111110" << endl;
+        //addi $v0 $v0 0x1
+        ss << "00100000010000100000000000000001" << endl;
+        //addi $v0 $v0 0x1
+        ss << "00100000010000100000000000000001" << endl;
+        //jr $zero
+        ss << "00000000000000000000000000001000";
+        binary << ss.str();
+        binary.close();
+        
+        result = get_simulator_output(debug_mode);
+
+        status = "Fail";
+        message.str( std::string() );
+        message.clear();
+        message << "[, When branching backwards, " << input1 << " " << instr_name << " " << input2 << " expected the branch to execute " << expected_result << " instruction(s) following the branch. The branch executed: " << result << "]";
+        if (result == expected_result) {
+            status = "Pass";
+        }
+
+        cout << test_id << ", " << instr_name << ", " << status << ", Alelo " << message.str() << endl;
+        output << test_id++ << ", " << instr_name << ", " << status << ", Alelo " << message.str() << endl;
+    }
+    instructions.close();
 }
 
 void test_R_and_I(int& test_id, bool debug_mode, ofstream& output){
@@ -203,22 +337,22 @@ void test_R_and_I(int& test_id, bool debug_mode, ofstream& output){
             //instruction to test
             ss << instr << endl;
             //-----------put word to output-----------
-            //lui v0 0x3000
-            ss << "00111100000000100011000000000000" << endl;
-            //sb s2 0x0004 v0
-            ss << "10100000010100100000000000000100" << endl;
+            //lui t0 0x3000
+            ss << "00111100000010000011000000000000" << endl;
+            //sb s2 0x0004 t0
+            ss << "10100001000100100000000000000100" << endl;
             //srl s2 s2 0x0008
             ss << "00000000000100101001001000000010" << endl;
-            //sb s2 0x0004 v0
-            ss << "10100000010100100000000000000100" << endl;
+            //sb s2 0x0004 t0
+            ss << "10100001000100100000000000000100" << endl;
             //srl s2 s2 0x0008
             ss << "00000000000100101001001000000010" << endl;
-            //sb s2 0x0004 v0
-            ss << "10100000010100100000000000000100" << endl;
+            //sb s2 0x0004 t0
+            ss << "10100001000100100000000000000100" << endl;
             //srl s2 s2 0x0008
             ss << "00000000000100101001001000000010" << endl;
-            //sb s2 0x0004 v0
-            ss << "10100000010100100000000000000100" << endl;
+            //sb s2 0x0004 t0
+            ss << "10100001000100100000000000000100" << endl;
             binary << ss.str();
             binary.close();
             
@@ -312,22 +446,22 @@ void test_sl(int& test_id, bool debug_mode, ofstream& output){
             }
             
             //-----------put word to output-----------
-            //lui v0 0x3000
-            ss << "00111100000000100011000000000000" << endl;
-            //sb s2 0x0004 v0
-            ss << "10100000010100100000000000000100" << endl;
+            //lui t0 0x3000
+            ss << "00111100000010000011000000000000" << endl;
+            //sb s2 0x0004 t0
+            ss << "10100001000100100000000000000100" << endl;
             //srl s2 s2 0x0008
             ss << "00000000000100101001001000000010" << endl;
-            //sb s2 0x0004 v0
-            ss << "10100000010100100000000000000100" << endl;
+            //sb s2 0x0004 t0
+            ss << "10100001000100100000000000000100" << endl;
             //srl s2 s2 0x0008
             ss << "00000000000100101001001000000010" << endl;
-            //sb s2 0x0004 v0
-            ss << "10100000010100100000000000000100" << endl;
+            //sb s2 0x0004 t0
+            ss << "10100001000100100000000000000100" << endl;
             //srl s2 s2 0x0008
             ss << "00000000000100101001001000000010" << endl;
-            //sb s2 0x0004 v0
-            ss << "10100000010100100000000000000100" << endl;
+            //sb s2 0x0004 t0
+            ss << "10100001000100100000000000000100" << endl;
             binary << ss.str();
             binary.close();
             
@@ -392,22 +526,22 @@ void test_muldiv(int& test_id, bool debug_mode, ofstream& output){
             ss << "00000000000000001001000000010000" << endl;
 
             //-----------put word s2 to output-----------
-            //lui v0 0x3000
-            ss << "00111100000000100011000000000000" << endl;
-            //sb s2 0x0004 v0
-            ss << "10100000010100100000000000000100" << endl;
+            //lui t0 0x3000
+            ss << "00111100000010000011000000000000" << endl;
+            //sb s2 0x0004 t0
+            ss << "10100001000100100000000000000100" << endl;
             //srl s2 s2 0x0008
             ss << "00000000000100101001001000000010" << endl;
-            //sb s2 0x0004 v0
-            ss << "10100000010100100000000000000100" << endl;
+            //sb s2 0x0004 t0
+            ss << "10100001000100100000000000000100" << endl;
             //srl s2 s2 0x0008
             ss << "00000000000100101001001000000010" << endl;
-            //sb s2 0x0004 v0
-            ss << "10100000010100100000000000000100" << endl;
+            //sb s2 0x0004 t0
+            ss << "10100001000100100000000000000100" << endl;
             //srl s2 s2 0x0008
             ss << "00000000000100101001001000000010" << endl;
-            //sb s2 0x0004 v0
-            ss << "10100000010100100000000000000100" << endl;
+            //sb s2 0x0004 t0
+            ss << "10100001000100100000000000000100" << endl;
 
             binary << ss.str();
             binary.close();
@@ -449,22 +583,22 @@ void test_muldiv(int& test_id, bool debug_mode, ofstream& output){
             //mflo s2
             ss << "00000000000000001001000000010010" << endl;
             //-----------put word s2 to output-----------
-            //lui v0 0x3000
-            ss << "00111100000000100011000000000000" << endl;
-            //sb s2 0x0004 v0
-            ss << "10100000010100100000000000000100" << endl;
+            //lui t0 0x3000
+            ss << "00111100000010000011000000000000" << endl;
+            //sb s2 0x0004 t0
+            ss << "10100001000100100000000000000100" << endl;
             //srl s2 s2 0x0008
             ss << "00000000000100101001001000000010" << endl;
-            //sb s2 0x0004 v0
-            ss << "10100000010100100000000000000100" << endl;
+            //sb s2 0x0004 t0
+            ss << "10100001000100100000000000000100" << endl;
             //srl s2 s2 0x0008
             ss << "00000000000100101001001000000010" << endl;
-            //sb s2 0x0004 v0
-            ss << "10100000010100100000000000000100" << endl;
+            //sb s2 0x0004 t0
+            ss << "10100001000100100000000000000100" << endl;
             //srl s2 s2 0x0008
             ss << "00000000000100101001001000000010" << endl;
-            //sb s2 0x0004 v0
-            ss << "10100000010100100000000000000100" << endl;
+            //sb s2 0x0004 t0
+            ss << "10100001000100100000000000000100" << endl;
             
             binary << ss.str();
             binary.close();
@@ -519,12 +653,12 @@ int32_t get_simulator_output(bool debug_mode) {
         }
     }
     if (debug_mode) cout << ss.str() << endl;
-
     status = pclose(fp);
+    int32_t exit_code = WEXITSTATUS(status) -256;
+    cout << "status " << exit_code << endl;
     if (status == -1) {
          cout << "error closing simulator" << endl;
     }
-
     return result;
 }
 
