@@ -10,7 +10,7 @@
 #include "functions.hpp"
 using namespace std;
 bool debug_mode;
-
+fdf;
 
 int main(int argc, char* argv[]){
 	
