@@ -14,3 +14,4 @@ void test_line_break(FILE *fp, char* output, int32_t& result, int& count);
 char bin_string_to_char(string input);
 void populate_vector(vector<char> &instr_bytes, string instruction);
 void copy_vector_to_buffer(const vector<char> &instr_bytes, char* buffer);
+void s2_to_output(vector<char>& instr_bytes);
