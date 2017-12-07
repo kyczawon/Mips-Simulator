@@ -721,21 +721,23 @@ void get_simulator_output(bool debug_mode, int32_t& result, int32_t& exit_code) 
     }
 
     result = 0;
-    int count = 3;
     stringstream ss;
     while (fgets(output, 1024, fp) != NULL) {
         if (debug_mode) {
             ss << output << endl;
         } else {
-            if (*output == '\n') {
-                test_line_break(fp, output, result, count);
-            } else {
-                uint8_t num = (uint8_t) *output;
-                result = result | (uint32_t)(num << (8 * count--));
+            for (int i =0; i < 4; i++) {
+                char out = output[i];
+                if (out == '\n') {
+                test_line_break(fp, output, result);
+                } else {
+                    uint8_t num = (uint8_t) out;
+                    result = result | (uint32_t)(num << (8 * (3-i)));
+                }
             }
         }
     }
-    if (debug_mode) cout << ss.str() << endl;
+    if (1) cout << ss.str() << endl;
     status = pclose(fp);
     exit_code = WEXITSTATUS(status);
     if (exit_code != 0) exit_code-=256;
@@ -744,14 +746,14 @@ void get_simulator_output(bool debug_mode, int32_t& result, int32_t& exit_code) 
     }
 }
 
-void test_line_break(FILE *fp, char* output, int32_t& result, int& count) {
-    if (fgets(output, 1024, fp) != NULL) {
-        if (*output == '\n') {
-            result = result | (uint32_t)(10 << 8 * count++);
-            test_line_break(fp, output, result, count);
+void test_line_break(FILE *fp, char* output, int32_t& result) {
+    for (int i =0; i <4; i++) {
+        char out = output[i];
+        if (out == '\n') {
+        test_line_break(fp, output, result);
         } else {
-            uint8_t num = (uint8_t) *output;
-            result = result | (uint32_t)(num << 8 * count++);
+            uint8_t num = (uint8_t) out;
+            result = result | (uint32_t)(num << (8 * (3-i)));
         }
     }
 }
