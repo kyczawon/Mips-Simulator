@@ -4,10 +4,10 @@ using namespace std;
 
 //main functions
 
-void execute(vector <uint32_t> &instructions, uint8_t* data, int32_t (&registers)[32] , uint32_t& pc, uint32_t& pc_next, int32_t (&HiLo)[2]);
+void execute(vector <uint32_t> &instructions, uint8_t* data, int32_t (&registers)[32] , uint32_t& pc, uint32_t& pc_next, int32_t (&HiLo)[2], uint8_t* instr_bytes);
 void execute_R(uint32_t instr, uint8_t* data, int32_t (&registers)[32], uint32_t& pc, uint32_t& pc_next, int32_t (&HiLo)[2]);
 void execute_J(uint32_t instr, int32_t (&registers)[32], uint8_t& opcode, uint32_t& pc, uint32_t& pc_next);
-void execute_I (uint32_t instr, uint8_t* data, int32_t (&registers)[32], uint8_t &opcode, uint32_t& pc, uint32_t& pc_next);
+void execute_I (uint32_t instr, uint8_t* data, int32_t (&registers)[32], uint8_t &opcode, uint32_t& pc, uint32_t& pc_next, uint8_t* instr_bytes);
 void decode_fields_R (uint32_t &op1, uint32_t &op2, uint32_t &dest_reg, uint32_t &shift_amt, uint32_t &funct_code, const uint32_t &instr);
 void decode_fields_I (uint32_t &dest_reg, uint32_t &src_reg, int32_t& immediate, const uint32_t &instruction);
 
@@ -57,13 +57,13 @@ void andi(uint32_t &dest_reg, uint32_t &src_reg, int32_t &immediate, int32_t (&r
 void ori(uint32_t &dest_reg, uint32_t &src_reg, int32_t &immediate, int32_t (&registers)[32]);
 void xori(uint32_t &dest_reg, uint32_t &src_reg, int32_t &immediate, int32_t (&registers)[32]);
 void lui(uint32_t &dest_reg, int32_t &immediate, int32_t (&registers)[32]);
-void lb(uint32_t address, uint8_t* data, uint32_t dest_reg, int32_t (&registers)[32]);
-void lh(uint32_t address, uint8_t* data, uint32_t dest_reg, int32_t (&registers)[32]);
-void lwl(uint32_t address, uint8_t* data, uint32_t dest_reg, int32_t (&registers)[32]); 
-void lw(uint32_t address, uint8_t* data, uint32_t dest_reg, int32_t (&registers)[32]);
-void lbu(uint32_t address, uint8_t* data, uint32_t dest_reg, int32_t (&registers)[32]);
-void lhu(uint32_t address, uint8_t* data, uint32_t dest_reg, int32_t (&registers)[32]);
-void lwr(int32_t address, uint8_t* data, uint32_t dest_reg, int32_t (&registers)[32]);
+void lb(uint32_t address, uint8_t* data, uint32_t dest_reg, int32_t (&registers)[32], uint8_t* instr_bytes);
+void lh(uint32_t address, uint8_t* data, uint32_t dest_reg, int32_t (&registers)[32], uint8_t* instr_bytes);
+void lwl(uint32_t address, uint8_t* data, uint32_t dest_reg, int32_t (&registers)[32], uint8_t* instr_bytes); 
+void lw(uint32_t address, uint8_t* data, uint32_t dest_reg, int32_t (&registers)[32], uint8_t* instr_bytes);
+void lbu(uint32_t address, uint8_t* data, uint32_t dest_reg, int32_t (&registers)[32], uint8_t* instr_bytes);
+void lhu(uint32_t address, uint8_t* data, uint32_t dest_reg, int32_t (&registers)[32], uint8_t* instr_bytes);
+void lwr(int32_t address, uint8_t* data, uint32_t dest_reg, int32_t (&registers)[32], uint8_t* instr_bytes);
 void sb(uint32_t address, uint8_t* data, uint8_t value);
 void sh(uint32_t address, uint8_t* data, int32_t value);
 void sw(uint32_t address, uint8_t* data, int32_t value);

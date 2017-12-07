@@ -28,7 +28,7 @@ int main(int argc, char* argv[]){
 
 	 for (uint32_t i = 0; i < DATA_SIZE; i++) {
 		data[i] = 0;
-	 }
+	}
 
 	//global variables
 	 //program counter
@@ -47,17 +47,28 @@ int main(int argc, char* argv[]){
 	if (!infile.is_open()) exit(-21);
 	//else read the file and store in temporary dinamically allocated array of bytes
 	size = infile.tellg();
-	memblock = new char [size];
+	//we will use this version 
+	memblock = new char [size]; //memblock will be used by load instructions to read from the instr. memory space
 	infile.seekg (0, ios::beg);
 	infile.read (memblock, size);
 	infile.close();
-	//combine bytes and copy instructions in vector
+
+	//copy of array of bytes to let read operations of memory-space to execute more easily
+	uint8_t* instr_bytes = new uint8_t[INSTR_SIZE];
+
+	for (uint32_t x = 0; x < INSTR_SIZE; x++) {
+		instr_bytes[x] = 0;
+	}
+	//combine bytes and copy instructions in vector (and populate static array of bytes)
 	uint32_t temp;
 	for(int i = 0; i < size; i += 4){
 		temp = 0;
 		//combine adjacent bytes
 		for(int j = 0; j < 4; j++){
 			temp = temp | ((uint8_t)memblock[i + j] << (8 * (3 - j)));
+
+			//load byte into copy array
+			instr_bytes[i + j] = (uint8_t)memblock[i + j];
 		}
 		instructions.push_back(temp);
 	}
@@ -71,10 +82,10 @@ int main(int argc, char* argv[]){
 
 	//execute instructions
 	while (pc < instructions.size()){
-		execute(instructions, data, registers, pc, pc_next, HiLo);
+		execute(instructions, data, registers, pc, pc_next, HiLo, instr_bytes);
 		//from pc & pc_next understand what instruction has been executed
 		if (pc_next == 0){ //because jr sets pc_next to zero
-			execute(instructions, data, registers, ++pc, pc_next, HiLo);
+			execute(instructions, data, registers, ++pc, pc_next, HiLo, instr_bytes);
 			break;  
 		}
 		//if 'non-pc-related' instruction has been executed 
@@ -90,15 +101,19 @@ int main(int argc, char* argv[]){
 			//check that there is an instruction to be executed!
 			if (pc + 1 > instructions.size()) exit(-11);
 			//execute next instruction because of delay slot
-			execute(instructions, data, registers, ++pc, pc_next, HiLo);
+			execute(instructions, data, registers, ++pc, pc_next, HiLo, instr_bytes);
 			//update pc to point to new instruction
 			pc = pc_next;
 			pc_next = pc + 1;
 		}
 	}
+	//get exit code
 	char exit_result = (char) registers[2];
   	exit(exit_result);
 
+	//delete dinamically allocated memory
+	delete[] data;
+	delete[] instr_bytes;
 	//unknown exception handler
 	}catch(...) {exit(-20);}
 	return 0;
@@ -115,7 +130,9 @@ uint32_t bin_string_to_uint32_t(string input) {
 	return x;
 }
 
-void execute(vector <uint32_t> &instructions, uint8_t* data, int32_t (&registers)[32], uint32_t& pc, uint32_t& pc_next, int32_t (&HiLo)[2]) {
+
+
+void execute(vector <uint32_t> &instructions, uint8_t* data, int32_t (&registers)[32], uint32_t& pc, uint32_t& pc_next, int32_t (&HiLo)[2], uint8_t* instr_bytes) {
 	uint32_t instr = instructions[pc];
 	//decode instruction and call correct subfunction
 	//isolate opcode
@@ -131,7 +148,7 @@ void execute(vector <uint32_t> &instructions, uint8_t* data, int32_t (&registers
 		execute_J(instr, registers, opcode, pc, pc_next);
 	}
 	//further decode and (eventually) execute
-	else execute_I(instr, data, registers, opcode, pc, pc_next);
+	else execute_I(instr, data, registers, opcode, pc, pc_next, instr_bytes);
 }
 
 void execute_J(uint32_t instr, int32_t (&registers)[32], uint8_t& opcode, uint32_t& pc, uint32_t& pc_next) {
@@ -257,7 +274,7 @@ void execute_R(uint32_t instr, uint8_t* data, int32_t (&registers)[32], uint32_t
 	}
 }
 
-void execute_I (uint32_t instr, uint8_t* data, int32_t (&registers)[32], uint8_t &opcode, uint32_t& pc, uint32_t& pc_next){
+void execute_I (uint32_t instr, uint8_t* data, int32_t (&registers)[32], uint8_t &opcode, uint32_t& pc, uint32_t& pc_next, uint8_t* instr_bytes){
 	uint32_t dest_reg, src_reg;
 	int32_t immediate;
 	decode_fields_I(dest_reg, src_reg, immediate, instr);
@@ -320,25 +337,25 @@ void execute_I (uint32_t instr, uint8_t* data, int32_t (&registers)[32], uint8_t
 	else if (opcode < 0x30){
 		switch(opcode){
 			case 32:	//lb 	rt, imm(rs) 	100000
-			 	lb(registers[src_reg] + immediate, data, dest_reg, registers);
+			 	lb(registers[src_reg] + immediate, data, dest_reg, registers, instr_bytes);
 			 	break;
 			case 33:	//lh 	rt, imm(rs) 	100001
-			 	lh(registers[src_reg] + immediate, data, dest_reg, registers);
+			 	lh(registers[src_reg] + immediate, data, dest_reg, registers, instr_bytes);
 			 	break;
 			case 34:	//lwl	rt, imm(rs)		100010
-				lwl(registers[src_reg] + immediate, data, dest_reg, registers);
+				lwl(registers[src_reg] + immediate, data, dest_reg, registers, instr_bytes);
 				break;
 			case 35:	//lw 	rt, imm(rs) 	100011
-			 	lw(registers[src_reg] + immediate, data, dest_reg, registers);
+			 	lw(registers[src_reg] + immediate, data, dest_reg, registers, instr_bytes);
 			 	break;
 			case 36:	//lbu 	rt, imm(rs) 	100100
-			 	lbu(registers[src_reg] + immediate, data, dest_reg, registers);
+			 	lbu(registers[src_reg] + immediate, data, dest_reg, registers, instr_bytes);
 			 	break;
 			case 37:	//lhu 	rt, imm(rs) 	100101 
-			 	lhu(registers[src_reg] + immediate, data, dest_reg, registers);
+			 	lhu(registers[src_reg] + immediate, data, dest_reg, registers, instr_bytes);
 			 	break;
 			case 38:	//lwr 	rt, imm(rs) 	100110 
-			 	lwr(registers[src_reg] + immediate, data, dest_reg, registers);
+			 	lwr(registers[src_reg] + immediate, data, dest_reg, registers, instr_bytes);
 			 	break;
 			case 40:	//sb 	rt, imm(rs) 	101000
 				sb(registers[src_reg] + immediate, data, registers[dest_reg] & 0x0000FF);
@@ -642,11 +659,18 @@ void lui(uint32_t &dest_reg, int32_t &immediate, int32_t (&registers)[32]){
 	registers[dest_reg] = immediate << 16;
 }
 
-void lb(uint32_t address, uint8_t* data, uint32_t dest_reg, int32_t (&registers)[32]){
+void lb(uint32_t address, uint8_t* data, uint32_t dest_reg, int32_t (&registers)[32], uint8_t* instr_bytes){
 		//check if mem to be accessed is between correct bounds for data space or instructions space
-	if ((address >= ADDR_DATA && address < ADDR_DATA + DATA_SIZE) /*|| (address >= ADDR_INSTR && address < ADDR_INSTR + INSTR_SIZE)*/){
+	if (address >= ADDR_DATA && address < ADDR_DATA + DATA_SIZE){
 		//remove data offset and read
 		int8_t temp = data[address - ADDR_DATA];
+		//check if sign extension is needed
+		if (temp >= 0) registers[dest_reg] = temp;
+		else registers[dest_reg] = (int32_t)temp;
+	}
+	else if (address >= ADDR_INSTR && address < ADDR_INSTR + INSTR_SIZE){
+		//remove data offset and read
+		int8_t temp = instr_bytes[address - ADDR_INSTR];
 		//check if sign extension is needed
 		if (temp >= 0) registers[dest_reg] = temp;
 		else registers[dest_reg] = (int32_t)temp;
@@ -664,17 +688,29 @@ void lb(uint32_t address, uint8_t* data, uint32_t dest_reg, int32_t (&registers)
 	else exit(-11);
 }
 
-void lh(uint32_t address, uint8_t* data, uint32_t dest_reg, int32_t (&registers)[32]){
+void lh(uint32_t address, uint8_t* data, uint32_t dest_reg, int32_t (&registers)[32], uint8_t* instr_bytes){
 	//check for address alignment
 	if (address % 2 != 0) exit(-11);
 		//check if mem to be accessed is between correct bounds for data space or instructions space
-	if ((address >= ADDR_DATA && address < ADDR_DATA + DATA_SIZE) /* || (address >= ADDR_INSTR && address < ADDR_INSTR + INSTR_SIZE) */){
+	if (address >= ADDR_DATA && address < ADDR_DATA + DATA_SIZE){
 		//remove offset to address
 		address -= ADDR_DATA;
 		//load higher byte
 		int16_t temp = 0 | ((uint16_t)data[address] << 8);
 		//load lower byte
 		temp = temp | (uint16_t)(data[address + 1]);
+		//check if sign extension is needed
+		if (temp >= 0) registers[dest_reg] = temp;
+		else registers[dest_reg] = (int32_t)temp;
+	}
+	//else check if it is instruction space
+	else if (address >= ADDR_INSTR && address < ADDR_INSTR + INSTR_SIZE){
+		//remove offset to address
+		address -= ADDR_INSTR;
+		//load higher byte
+		int16_t temp = 0 | ((uint16_t)instr_bytes[address] << 8);
+		//load lower byte
+		temp = temp | (uint16_t)(instr_bytes[address + 1]);
 		//check if sign extension is needed
 		if (temp >= 0) registers[dest_reg] = temp;
 		else registers[dest_reg] = (int32_t)temp;
@@ -693,34 +729,51 @@ void lh(uint32_t address, uint8_t* data, uint32_t dest_reg, int32_t (&registers)
 
 }
 	
-void lwl(uint32_t address, uint8_t* data, uint32_t dest_reg, int32_t (&registers)[32]){
-		//check if mem to be accessed is between correct bounds for data space or instructions space
-	if (!(address >= ADDR_DATA && address < ADDR_DATA + DATA_SIZE) /* && !(address >= ADDR_INSTR && address < ADDR_INSTR + INSTR_SIZE) */) exit(-11);
+void lwl(uint32_t address, uint8_t* data, uint32_t dest_reg, int32_t (&registers)[32], uint8_t* instr_bytes){
+	//check if mem to be accessed is between correct bounds for data space or instructions space
+	if (!(address >= ADDR_DATA && address < ADDR_DATA + DATA_SIZE) && !(address >= ADDR_INSTR && address < ADDR_INSTR + INSTR_SIZE)) exit(-11);
 	//infer unalignment from address
 	uint32_t unalignment = 4 - (address % 4);
 	//if no unalignment execute normal load word
 	if (unalignment == 4){
-		lw(address, data, dest_reg, registers);
+		lw(address, data, dest_reg, registers, instr_bytes);
 		return;
 	}
-	//apply offset to address
-	address -= ADDR_DATA;
-	//load unaligned data
-	uint32_t temp = 0x0;
-	uint32_t past_val = registers[dest_reg];
-	past_val = (past_val << (8 * unalignment)) >> (8 * unalignment);
-	for(int x = 0; x < unalignment; x++){
-		temp = temp | ((uint32_t)data[address + x] << (8 * (3-x)));
+	if (address >= ADDR_DATA && address < ADDR_DATA + DATA_SIZE){
+		//apply offset to address
+		address -= ADDR_DATA;
+		//load unaligned data
+		uint32_t temp = 0x0;
+		uint32_t past_val = registers[dest_reg];
+		past_val = (past_val << (8 * unalignment)) >> (8 * unalignment);
+		for(int x = 0; x < unalignment; x++){
+			temp = temp | ((uint32_t)data[address + x] << (8 * (3-x)));
+		}
+		registers[dest_reg] = past_val | temp;
+		return;
 	}
-	registers[dest_reg] = past_val | temp;
+	else if (address >= ADDR_INSTR && address < ADDR_INSTR + INSTR_SIZE){
+		//apply offset to address
+		address -= ADDR_INSTR;
+		//load unaligned data
+		uint32_t temp = 0x0;
+		uint32_t past_val = registers[dest_reg];
+		past_val = (past_val << (8 * unalignment)) >> (8 * unalignment);
+		for(int x = 0; x < unalignment; x++){
+			temp = temp | ((uint32_t)instr_bytes[address + x] << (8 * (3-x)));
+		}
+		registers[dest_reg] = past_val | temp;
+		return;
+	}
+	exit(-11);
 	
 }
 
-void lw(uint32_t address, uint8_t* data, uint32_t dest_reg, int32_t (&registers)[32]){
+void lw(uint32_t address, uint8_t* data, uint32_t dest_reg, int32_t (&registers)[32], uint8_t* instr_bytes){
 	//check for address alignment
 	if (address % 4 != 0) exit(-11);
 		//check if mem to be accessed is between correct bounds for data space or instructions space
-	if ((address >= ADDR_DATA && address < ADDR_DATA + DATA_SIZE) /* || (address >= ADDR_INSTR && address < ADDR_INSTR + INSTR_SIZE) */){
+	if (address >= ADDR_DATA && address < ADDR_DATA + DATA_SIZE){
 		//remove offset to address
 		address -= ADDR_DATA;
 		//load highest byte
@@ -732,6 +785,20 @@ void lw(uint32_t address, uint8_t* data, uint32_t dest_reg, int32_t (&registers)
 			if (debug_mode) cout << "registers[dest_reg] value: " << registers[dest_reg] << endl;
 			registers[dest_reg] = registers[dest_reg] | ((uint32_t)data[address + x] << (8 * (3 - x)));
 		}
+	}
+	//else if in instructions memory space
+	else if(address >= ADDR_INSTR && address < ADDR_INSTR + INSTR_SIZE){
+		//remove offset to address
+		address -= ADDR_INSTR;
+		//load highest byte
+		registers[dest_reg] = (uint32_t)instr_bytes[address] << 24;
+		if (debug_mode) cout << "address" << ": " << (uint32_t)instr_bytes[address] << endl;
+		//load lower bytes
+		for (int x = 1; x < 4; x++){
+			if (debug_mode) cout << "address +" << x << ": " << (uint32_t)instr_bytes[address + x] << endl;
+			if (debug_mode) cout << "registers[dest_reg] value: " << registers[dest_reg] << endl;
+			registers[dest_reg] = registers[dest_reg] | ((uint32_t)instr_bytes[address + x] << (8 * (3 - x)));
+		}		
 	}
 	//else check if instruction is trying to read ADDR_GETC location
 	else if (address == 0x30000000){
@@ -745,12 +812,17 @@ void lw(uint32_t address, uint8_t* data, uint32_t dest_reg, int32_t (&registers)
 
 }
 
-void lbu(uint32_t address, uint8_t* data, uint32_t dest_reg, int32_t (&registers)[32]){
+void lbu(uint32_t address, uint8_t* data, uint32_t dest_reg, int32_t (&registers)[32], uint8_t* instr_bytes){
 		//check if mem to be accessed is between correct bounds for data space or instructions space
-	if ((address >= ADDR_DATA && address < ADDR_DATA + DATA_SIZE) /* || (address >= ADDR_INSTR && address < ADDR_INSTR + INSTR_SIZE) */){
+	if (address >= ADDR_DATA && address < ADDR_DATA + DATA_SIZE){
 		//remove data offset and read
 		uint32_t temp = data[address - ADDR_DATA];
 		registers[dest_reg] = temp & 0x000000FF;
+	}
+	else if (address >= ADDR_INSTR && address < ADDR_INSTR + INSTR_SIZE){
+		//remove data offset and read
+		uint32_t temp = instr_bytes[address - ADDR_INSTR];
+		registers[dest_reg] = temp & 0x000000FF;		
 	}
 	//else check if instruction is trying to read ADDR_GETC location
 	else if (address == 0x30000003){
@@ -765,11 +837,11 @@ void lbu(uint32_t address, uint8_t* data, uint32_t dest_reg, int32_t (&registers
 	else exit(-11);
 }
 
-void lhu(uint32_t address, uint8_t* data, uint32_t dest_reg, int32_t (&registers)[32]){
+void lhu(uint32_t address, uint8_t* data, uint32_t dest_reg, int32_t (&registers)[32], uint8_t* instr_bytes){
 	//check for address alignment
 	if (address % 2 != 0) exit(-11);
 		//check if mem to be accessed is between correct bounds for data space or instructions space
-	if ((address >= ADDR_DATA && address < ADDR_DATA + DATA_SIZE) /* || (address >= ADDR_INSTR && address < ADDR_INSTR + INSTR_SIZE) */){
+	if ((address >= ADDR_DATA && address < ADDR_DATA + DATA_SIZE) /* ||  */){
 		//remove offset to address
 		address = address - ADDR_DATA;
 		//load higher byte
@@ -777,6 +849,15 @@ void lhu(uint32_t address, uint8_t* data, uint32_t dest_reg, int32_t (&registers
 		//load lower byte
 		temp = temp | (uint32_t)(data[address + 1]);
 		registers[dest_reg] = temp & 0x0000FFFF;
+	}
+	else if (address >= ADDR_INSTR && address < ADDR_INSTR + INSTR_SIZE){
+		//remove offset to address
+		address = address - ADDR_INSTR;
+		//load higher byte
+		int32_t temp = 0 | ((uint32_t)instr_bytes[address] << 8);
+		//load lower byte
+		temp = temp | (uint32_t)(instr_bytes[address + 1]);
+		registers[dest_reg] = temp & 0x0000FFFF;		
 	}
 	//else check if instruction is trying to read ADDR_GETC location
 	else if (address == 0x30000002){
@@ -792,26 +873,42 @@ void lhu(uint32_t address, uint8_t* data, uint32_t dest_reg, int32_t (&registers
 
 }
 
-void lwr(int32_t address, uint8_t* data, uint32_t dest_reg, int32_t (&registers)[32]){
+void lwr(int32_t address, uint8_t* data, uint32_t dest_reg, int32_t (&registers)[32], uint8_t* instr_bytes){
 	//check if mem to be accessed is between correct bounds for data space or instructions space
-	if (!(address >= ADDR_DATA && address < ADDR_DATA + DATA_SIZE) /* && !(address >= ADDR_INSTR && address < ADDR_INSTR + INSTR_SIZE) */) exit(-11);
+	if (!(address >= ADDR_DATA && address < ADDR_DATA + DATA_SIZE) && !(address >= ADDR_INSTR && address < ADDR_INSTR + INSTR_SIZE)) exit(-11);
 	//infer unalignment from address
 	uint32_t unalignment = address % 4;
 	//if no unalignment execute normal load word
 	if (unalignment == 3){
-		lw(address - 3, data, dest_reg, registers);
+		lw(address - 3, data, dest_reg, registers, instr_bytes);
 		return;
 	}
-	//apply offset to address
-	address -= ADDR_DATA;
-	//load unaligned data
-	uint32_t temp = 0x0;
-	uint32_t past_val = registers[dest_reg];
-	past_val = (past_val >> (8 * ++unalignment)) << (8 * unalignment);
-	for(int x = 0; x <= unalignment; x++){
-		temp = temp | ((uint32_t)data[address - x] << (8 * x));
+	//data mem
+	if (address >= ADDR_DATA && address < ADDR_DATA + DATA_SIZE){
+		//apply offset to address
+		address -= ADDR_DATA;
+		//load unaligned data
+		uint32_t temp = 0x0;
+		uint32_t past_val = registers[dest_reg];
+		past_val = (past_val >> (8 * ++unalignment)) << (8 * unalignment);
+		for(int x = 0; x <= unalignment; x++){
+			temp = temp | ((uint32_t)data[address - x] << (8 * x));
+		}
+		registers[dest_reg] = past_val | temp;
 	}
-	registers[dest_reg] = past_val | temp;
+	//instructions mem
+	else if(address >= ADDR_INSTR && address < ADDR_INSTR + INSTR_SIZE){
+		//apply offset to address
+		address -= ADDR_INSTR;
+		//load unaligned data
+		uint32_t temp = 0x0;
+		uint32_t past_val = registers[dest_reg];
+		past_val = (past_val >> (8 * ++unalignment)) << (8 * unalignment);
+		for(int x = 0; x <= unalignment; x++){
+			temp = temp | ((uint32_t)instr_bytes[address - x] << (8 * x));
+		}
+		registers[dest_reg] = past_val | temp;		
+	}
 }
 
 void sb(uint32_t address, uint8_t* data, uint8_t value){
