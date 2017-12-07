@@ -31,12 +31,12 @@ int main(int argc, char* argv[])
     }
 
     // test_jr(test_id, debug_mode, output);
-    // test_put_char(test_id, debug_mode, output);
-    // test_R_and_I(test_id, debug_mode, output);
+    test_put_char(test_id, debug_mode, output);
+    test_R_and_I(test_id, debug_mode, output);
     test_sl(test_id, debug_mode, output);
-    // test_muldiv(test_id, debug_mode, output);
-    // test_branch(test_id, debug_mode, output);
-    // test_link_fwd(test_id, debug_mode, output);
+    test_muldiv(test_id, debug_mode, output);
+    test_branch(test_id, debug_mode, output);
+    test_link_fwd(test_id, debug_mode, output);
 }
 
 void test_jr(int& test_id, bool debug_mode, ofstream& output){
