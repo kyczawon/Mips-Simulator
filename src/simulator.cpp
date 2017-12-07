@@ -492,9 +492,11 @@ void divu(uint32_t op1, uint32_t op2, int32_t (&registers)[32], int32_t (&HiLo)[
 void add(uint32_t dest_reg, uint32_t op1, uint32_t op2, int32_t (&registers)[32]){
 	int32_t source1 = registers[op1];
 	int32_t source2 = registers[op2];
-	int64_t sum = source1 + source2;
+	if (debug_mode) cout << "source1 " << source1 << "source2 " << source2 << endl;
+	uint64_t sum = source1 + source2;
 	//check for signed/unsigned overflow
 	int32_t sum2 = source1 + source2;
+	if (debug_mode) cout << "sum " << sum << "sum2 " << sum2 << endl;
 	if (sum != sum2) exit(-10);
 	else registers[dest_reg] =  sum2;
 }
@@ -824,10 +826,10 @@ void sb(uint32_t address, uint8_t* data, uint8_t value){
 		if (debug_mode) cout << "value: " << (uint32_t) value << endl;
 	}
 	//else check if instruction is trying to write ADDR_PUTC location
-	else if (address == 0x30000004){
-		cout << (char) value << endl;
+	else if (address == 0x30000007){
+		cout << value << endl;
 	}
-	else if (address > 0x30000004 && address < 0x30000008) return;
+	else if (address > 0x30000003 && address < 0x30000007) return;
 	//otherwise return error code
 	else exit(-11);
 }
