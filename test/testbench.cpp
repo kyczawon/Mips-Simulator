@@ -44,7 +44,7 @@ void test_jr(int& test_id, bool debug_mode, ofstream& output){
     //open output file in binary mode
     ofstream outfile ("test/temp/binary.bin", ofstream::binary);
     if (!outfile.is_open()) {
-        system("mkdir -p test/output");
+        system("mkdir -p test/temp");
         ofstream outfile ("test/temp/binary.bin", ofstream::binary);
         if (!outfile.is_open()) {
             cout << "Output file could not be created" << endl;
@@ -90,7 +90,7 @@ void test_put_char(int& test_id, bool debug_mode, ofstream& output){
     //open output file in binary mode
     ofstream outfile ("test/temp/binary.bin", ofstream::binary);
     if (!outfile.is_open()) {
-        system("mkdir -p test/output");
+        system("mkdir -p test/temp");
         ofstream outfile ("test/temp/binary.bin", ofstream::binary);
         if (!outfile.is_open()) {
             cout << "Output file could not be created" << endl;
@@ -167,7 +167,7 @@ void test_link_fwd(int& test_id, bool debug_mode, ofstream& output){
         //open output file in binary mode
         ofstream outfile ("test/temp/binary.bin", ofstream::binary);
         if (!outfile.is_open()) {
-            system("mkdir -p test/output");
+            system("mkdir -p test/temp");
             ofstream outfile ("test/temp/binary.bin", ofstream::binary);
             if (!outfile.is_open()) {
                 cout << "Output file could not be created" << endl;
@@ -317,7 +317,7 @@ void test_branch(int& test_id, bool debug_mode, ofstream& output){
         //open output file in binary mode
         ofstream outfile ("test/temp/binary.bin", ofstream::binary);
         if (!outfile.is_open()) {
-            system("mkdir -p test/output");
+            system("mkdir -p test/temp");
             ofstream outfile ("test/temp/binary.bin", ofstream::binary);
             if (!outfile.is_open()) {
                 cout << "Output file could not be created" << endl;
@@ -377,7 +377,7 @@ void test_branch(int& test_id, bool debug_mode, ofstream& output){
         //open output file in binary mode
         ofstream outfile2 ("test/temp/binary.bin", ofstream::binary);
         if (!outfile2.is_open()) {
-            system("mkdir -p test/output");
+            system("mkdir -p test/temp");
             ofstream outfile2 ("test/temp/binary.bin", ofstream::binary);
             if (!outfile2.is_open()) {
                 cout << "Output file could not be created" << endl;
@@ -459,7 +459,7 @@ void test_R_and_I(int& test_id, bool debug_mode, ofstream& output){
             //open output file in binary mode
             ofstream outfile ("test/temp/binary.bin", ofstream::binary);
             if (!outfile.is_open()) {
-                system("mkdir -p test/output");
+                system("mkdir -p test/temp");
                 ofstream outfile ("test/temp/binary.bin", ofstream::binary);
                 if (!outfile.is_open()) {
                     cout << "Output file could not be created" << endl;
@@ -573,7 +573,7 @@ void test_sl(int& test_id, bool debug_mode, ofstream& output){
         //open output file in binary mode
         ofstream outfile ("test/temp/binary.bin", ofstream::binary);
         if (!outfile.is_open()) {
-            system("mkdir -p test/output");
+            system("mkdir -p test/temp");
             ofstream outfile ("test/temp/binary.bin", ofstream::binary);
             if (!outfile.is_open()) {
                 cout << "Output file could not be created" << endl;
@@ -677,7 +677,7 @@ void test_muldiv(int& test_id, bool debug_mode, ofstream& output){
             //open output file in binary mode
             ofstream outfile ("test/temp/binary.bin", ofstream::binary);
             if (!outfile.is_open()) {
-                system("mkdir -p test/output");
+                system("mkdir -p test/temp");
                 ofstream outfile ("test/temp/binary.bin", ofstream::binary);
                 if (!outfile.is_open()) {
                     cout << "Output file could not be created" << endl;
@@ -734,7 +734,7 @@ void test_muldiv(int& test_id, bool debug_mode, ofstream& output){
             //open output file in binary mode
             ofstream outfile2 ("test/temp/binary.bin", ofstream::binary);
             if (!outfile2.is_open()) {
-                system("mkdir -p test/output");
+                system("mkdir -p test/temp");
                 ofstream outfile2 ("test/temp/binary.bin", ofstream::binary);
                 if (!outfile2.is_open()) {
                     cout << "Output file could not be created" << endl;
