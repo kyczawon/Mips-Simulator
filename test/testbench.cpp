@@ -30,13 +30,13 @@ int main(int argc, char* argv[])
         }
     }
 
-    test_jr(test_id, debug_mode, output);
-    test_put_char(test_id, debug_mode, output);
-    test_R_and_I(test_id, debug_mode, output);
+    // test_jr(test_id, debug_mode, output);
+    // test_put_char(test_id, debug_mode, output);
+    // test_R_and_I(test_id, debug_mode, output);
     test_sl(test_id, debug_mode, output);
-    test_muldiv(test_id, debug_mode, output);
-    test_branch(test_id, debug_mode, output);
-    test_link_fwd(test_id, debug_mode, output);
+    // test_muldiv(test_id, debug_mode, output);
+    // test_branch(test_id, debug_mode, output);
+    // test_link_fwd(test_id, debug_mode, output);
 }
 
 void test_jr(int& test_id, bool debug_mode, ofstream& output){
@@ -585,16 +585,20 @@ void test_sl(int& test_id, bool debug_mode, ofstream& output){
         
         /////FILL BUFFER/////
         //-----------put msb of address into register accessed by store-----------
-        //lui v1 16 most significant bits of address
-        populate_vector(instr_bytes, "0011110000000011" + store_address_binary.substr(0, 16));
+        //lui t0 16 most significant bits of address
+        populate_vector(instr_bytes, "0011110000001000" + store_address_binary.substr(0, 16));
+
+        //-----------put msb of address into register accessed by load-----------
+        //lui t1 16 most significant bits of address
+        populate_vector(instr_bytes, "0011110000001001" + load_address_binary.substr(0, 16));
 
         //-----------initialize the word to -1-----------
         //lui s1 - 16 most significant bits of input 1
         populate_vector(instr_bytes, "00111100000100011111111111111111");
         //ori s1 s1 - 16 least significant bits of input 1
         populate_vector(instr_bytes, "00110110001100011111111111111111");
-        //sw $s1 address (16lsb) v1 (address 16msb)
-        populate_vector(instr_bytes, "1010110001110001" + store_address_init_binary.substr(16, 32));
+        //sw $s1 address (16lsb) t0 (address 16msb)
+        populate_vector(instr_bytes, "1010110100010001" + store_address_init_binary.substr(16, 32));
 
         //-----------put value to be stored-----------
         //lui s0 - 16 most significant bits of input 1
@@ -608,18 +612,18 @@ void test_sl(int& test_id, bool debug_mode, ofstream& output){
             populate_vector(instr_bytes, "00111100000100101111111111111111");
             //ori s2 s2 - 16 least significant bits of input 1
             populate_vector(instr_bytes, "00110110010100101111111111111111");
-            //sw $s0 address (16lsb) v1 (address 16msb)
-            populate_vector(instr_bytes, "1010110001110000" + store_address_binary.substr(16, 32));
+            //sw $s0 address (16lsb) t0 (address 16msb)
+            populate_vector(instr_bytes, "1010110100010000" + store_address_binary.substr(16, 32));
             //load_instruction to test with 16 least significant bits of address as immiediate
-            //load_instruction $s2 address (16lsb) v1 (address 16msb)
-            populate_vector(instr_bytes, instr + "0001110010" + load_address_binary.substr(16, 32));
+            //load_instruction $s2 address (16lsb) t1 (address 16msb)
+            populate_vector(instr_bytes, instr + "0100110010" + load_address_binary.substr(16, 32));
         }
         if (is_store) { //if store, test store and load back
             //store_instruction to test with 16 least significant bits of address as immiediate
-            //store_instruction $s0 address (16lsb) v1 (address 16msb)
-            populate_vector(instr_bytes, instr + "0001110000" + store_address_binary.substr(16, 32));
-            //lw $s2 address (16lsb) v1 (address 16msb)
-            populate_vector(instr_bytes, "1000110001110010" + load_address_binary.substr(16, 32));
+            //store_instruction $s0 address (16lsb) t0 (address 16msb)
+            populate_vector(instr_bytes, instr + "0100010000" + store_address_binary.substr(16, 32));
+            //lw $s2 address (16lsb) t1 (address 16msb)
+            populate_vector(instr_bytes, "1000110100110010" + load_address_binary.substr(16, 32));
         }
         
         s2_to_output(instr_bytes);
@@ -882,6 +886,20 @@ void test_line_break(FILE *fp, char* output, int32_t& result) {
             result = result | (uint32_t)(num << (8 * (3-i)));
         }
     }
+}
+
+string uint32_t_to_bin(int value) {
+    string bin = "";
+    for (int i = 31; i >= 0; --i) {
+        int power = pow(2, i);
+        if (value >= power) {
+            bin += "1";
+            value -= power;
+        } else {
+            bin += "0";
+        }
+    }
+    return bin;
 }
 
 string int_to_bin(int value) {

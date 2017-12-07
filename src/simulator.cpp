@@ -646,7 +646,6 @@ void andi(uint32_t &dest_reg, uint32_t &src_reg, int32_t &immediate, int32_t (&r
 }
 
 void ori(uint32_t &dest_reg, uint32_t &src_reg, int32_t &immediate, int32_t (&registers)[32]){
-	if (debug_mode) cout << "entered ori" << endl;
 	immediate = immediate & 0x0000FFFF;
 	registers[dest_reg] = registers[src_reg] | immediate;
 }
@@ -773,6 +772,7 @@ void lw(uint32_t address, uint8_t* data, uint32_t dest_reg, int32_t (&registers)
 	//check for address alignment
 	if (address % 4 != 0) exit(-11);
 		//check if mem to be accessed is between correct bounds for data space or instructions space
+	if (debug_mode) cout << "address" << ": " << address << endl;
 	if (address >= ADDR_DATA && address < ADDR_DATA + DATA_SIZE){
 		//remove offset to address
 		address -= ADDR_DATA;
@@ -916,7 +916,6 @@ void sb(uint32_t address, uint8_t* data, uint8_t value){
 	if (address >= ADDR_DATA && address < ADDR_DATA + DATA_SIZE){
 		//remove data offset and write
 		data[address - ADDR_DATA] = value;
-		if (debug_mode) cout << "value: " << (uint32_t) value << endl;
 	}
 	//else check if instruction is trying to write ADDR_PUTC location
 	else if (address == 0x30000007){
@@ -937,7 +936,6 @@ void sh(uint32_t address, uint8_t* data, int32_t value){
 }
 
 void sw(uint32_t address, uint8_t* data, int32_t value){
-	if (debug_mode) cout << "sw value: " << value << endl;
 	if (address % 4 != 0) exit(-11);
 	int32_t lower_half, higher_half;
 	lower_half = value & 0x0000FFFF;
