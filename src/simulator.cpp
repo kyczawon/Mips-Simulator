@@ -497,13 +497,9 @@ void divu(uint32_t op1, uint32_t op2, int32_t (&registers)[32], int32_t (&HiLo)[
 void add(uint32_t dest_reg, uint32_t op1, uint32_t op2, int32_t (&registers)[32]){
 	int32_t source1 = registers[op1];
 	int32_t source2 = registers[op2];
-	if (debug_mode) cout << "source1 " << source1 << "source2 " << source2 << endl;
-	uint64_t sum = source1 + source2;
-	//check for signed/unsigned overflow
-	int32_t sum2 = source1 + source2;
-	if (debug_mode) cout << "sum " << sum << "sum2 " << sum2 << endl;
-	if (sum != sum2) exit(-10);
-	else registers[dest_reg] =  sum2;
+	if (((source1 > 0) && (source2 > pow(2,31) - 1 - source1)) || ((source1 < 0) && (source2 < -pow(2,31) - source1))) exit(-10);
+	int32_t sum = source1 + source2;
+	registers[dest_reg] =  sum;
 }
 
 void addu(uint32_t dest_reg, uint32_t op1, uint32_t op2, int32_t (&registers)[32]){
@@ -515,16 +511,10 @@ void sub(uint32_t dest_reg, uint32_t op1, uint32_t op2, int32_t (&registers)[32]
 	int32_t source1 = registers[op1];
 	//get 2's complement of op2
 	int32_t source2 = registers[op2];
-
-	int64_t diff = source1 - source2;
 	//check for signed/unsigned overflow
-	int32_t diff2 = source1 - source2;
-
-	if (debug_mode) cout<< source1 << "-" << source2 << " = " << diff2 << endl;
-	if (diff != diff2) exit(-10);
-	else{
-		registers[dest_reg] =  diff2;
-	}
+	if (((source1 < 0) && (source2 > pow(2,31) - 1 + source1)) || ((source1 > 0) && (source2 < -pow(2,31) + source1))) exit(-10);
+	int32_t diff = source1 - source2;
+	registers[dest_reg] =  diff;
 }
 
 void subu(uint32_t dest_reg, uint32_t op1, uint32_t op2, int32_t (&registers)[32]){
