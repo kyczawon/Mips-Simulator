@@ -22,8 +22,12 @@ int main(int argc, char* argv[])
     string output_name = "test/output/output.csv";
     output.open(output_name.c_str());
     if (!output.is_open()) {
-        cout << "Output file could not be opened" << endl;
-        exit(EXIT_FAILURE);
+        system("mkdir -p test/output");
+        output.open(output_name.c_str());
+        if (!output.is_open()) {
+            cout << "Output file could not be opened" << endl;
+            exit(EXIT_FAILURE);
+        }
     }
 
     test_jr(test_id, debug_mode, output);
@@ -40,8 +44,12 @@ void test_jr(int& test_id, bool debug_mode, ofstream& output){
     //open output file in binary mode
     ofstream outfile ("test/temp/binary.bin", ofstream::binary);
     if (!outfile.is_open()) {
-        cout << "binary file could not be created" << endl;
-        exit(EXIT_FAILURE);
+        system("mkdir -p test/output");
+        ofstream outfile ("test/temp/binary.bin", ofstream::binary);
+        if (!outfile.is_open()) {
+            cout << "Output file could not be created" << endl;
+            exit(EXIT_FAILURE);
+        }
     }
     // allocate memory for OUTPUT BUFFER --> can it be inferred at runtime? (or hardcoded?)
     vector<char> instr_bytes;
@@ -82,8 +90,12 @@ void test_put_char(int& test_id, bool debug_mode, ofstream& output){
     //open output file in binary mode
     ofstream outfile ("test/temp/binary.bin", ofstream::binary);
     if (!outfile.is_open()) {
-        cout << "binary file could not be created" << endl;
-        exit(EXIT_FAILURE);
+        system("mkdir -p test/output");
+        ofstream outfile ("test/temp/binary.bin", ofstream::binary);
+        if (!outfile.is_open()) {
+            cout << "Output file could not be created" << endl;
+            exit(EXIT_FAILURE);
+        }
     }
     // allocate memory for OUTPUT BUFFER --> can it be inferred at runtime? (or hardcoded?)
     vector<char> instr_bytes;
@@ -155,8 +167,12 @@ void test_link_fwd(int& test_id, bool debug_mode, ofstream& output){
         //open output file in binary mode
         ofstream outfile ("test/temp/binary.bin", ofstream::binary);
         if (!outfile.is_open()) {
-            cout << "binary file could not be created" << endl;
-            exit(EXIT_FAILURE);
+            system("mkdir -p test/output");
+            ofstream outfile ("test/temp/binary.bin", ofstream::binary);
+            if (!outfile.is_open()) {
+                cout << "Output file could not be created" << endl;
+                exit(EXIT_FAILURE);
+            }
         }
         // allocate memory for OUTPUT BUFFER --> can it be inferred at runtime? (or hardcoded?)
         vector<char> instr_bytes;
@@ -301,8 +317,12 @@ void test_branch(int& test_id, bool debug_mode, ofstream& output){
         //open output file in binary mode
         ofstream outfile ("test/temp/binary.bin", ofstream::binary);
         if (!outfile.is_open()) {
-            cout << "binary file could not be created" << endl;
-            exit(EXIT_FAILURE);
+            system("mkdir -p test/output");
+            ofstream outfile ("test/temp/binary.bin", ofstream::binary);
+            if (!outfile.is_open()) {
+                cout << "Output file could not be created" << endl;
+                exit(EXIT_FAILURE);
+            }
         }
         // allocate memory for OUTPUT BUFFER --> can it be inferred at runtime? (or hardcoded?)
         vector<char> instr_bytes;
@@ -357,8 +377,12 @@ void test_branch(int& test_id, bool debug_mode, ofstream& output){
         //open output file in binary mode
         ofstream outfile2 ("test/temp/binary.bin", ofstream::binary);
         if (!outfile2.is_open()) {
-            cout << "binary file could not be created" << endl;
-            exit(EXIT_FAILURE);
+            system("mkdir -p test/output");
+            ofstream outfile2 ("test/temp/binary.bin", ofstream::binary);
+            if (!outfile2.is_open()) {
+                cout << "Output file could not be created" << endl;
+                exit(EXIT_FAILURE);
+            }
         }
         // allocate memory for OUTPUT BUFFER --> can it be inferred at runtime? (or hardcoded?)
         instr_bytes.clear();
@@ -435,8 +459,12 @@ void test_R_and_I(int& test_id, bool debug_mode, ofstream& output){
             //open output file in binary mode
             ofstream outfile ("test/temp/binary.bin", ofstream::binary);
             if (!outfile.is_open()) {
-                cout << "binary file could not be created" << endl;
-                exit(EXIT_FAILURE);
+                system("mkdir -p test/output");
+                ofstream outfile ("test/temp/binary.bin", ofstream::binary);
+                if (!outfile.is_open()) {
+                    cout << "Output file could not be created" << endl;
+                    exit(EXIT_FAILURE);
+                }
             }
             // allocate memory for OUTPUT BUFFER --> can it be inferred at runtime? (or hardcoded?)
             vector<char> instr_bytes;
@@ -545,8 +573,12 @@ void test_sl(int& test_id, bool debug_mode, ofstream& output){
         //open output file in binary mode
         ofstream outfile ("test/temp/binary.bin", ofstream::binary);
         if (!outfile.is_open()) {
-            cout << "binary file could not be created" << endl;
-            exit(EXIT_FAILURE);
+            system("mkdir -p test/output");
+            ofstream outfile ("test/temp/binary.bin", ofstream::binary);
+            if (!outfile.is_open()) {
+                cout << "Output file could not be created" << endl;
+                exit(EXIT_FAILURE);
+            }
         }
         // allocate memory for OUTPUT BUFFER --> can it be inferred at runtime? (or hardcoded?)
         vector<char> instr_bytes;
@@ -645,8 +677,12 @@ void test_muldiv(int& test_id, bool debug_mode, ofstream& output){
             //open output file in binary mode
             ofstream outfile ("test/temp/binary.bin", ofstream::binary);
             if (!outfile.is_open()) {
-                cout << "binary file could not be created" << endl;
-                exit(EXIT_FAILURE);
+                system("mkdir -p test/output");
+                ofstream outfile ("test/temp/binary.bin", ofstream::binary);
+                if (!outfile.is_open()) {
+                    cout << "Output file could not be created" << endl;
+                    exit(EXIT_FAILURE);
+                }
             }
             // allocate memory for OUTPUT BUFFER --> can it be inferred at runtime? (or hardcoded?)
             vector<char> instr_bytes;
@@ -698,8 +734,12 @@ void test_muldiv(int& test_id, bool debug_mode, ofstream& output){
             //open output file in binary mode
             ofstream outfile2 ("test/temp/binary.bin", ofstream::binary);
             if (!outfile2.is_open()) {
-                cout << "binary file could not be created" << endl;
-                exit(EXIT_FAILURE);
+                system("mkdir -p test/output");
+                ofstream outfile2 ("test/temp/binary.bin", ofstream::binary);
+                if (!outfile2.is_open()) {
+                    cout << "Output file could not be created" << endl;
+                    exit(EXIT_FAILURE);
+                }
             }
             // allocate memory for OUTPUT BUFFER --> can it be inferred at runtime? (or hardcoded?)
             instr_bytes.clear();
