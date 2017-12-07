@@ -13,6 +13,10 @@ bool debug_mode;
 
 
 int main(int argc, char* argv[]){
+	
+	//try-catch block for unkonwn exceptions
+	try{
+
 	//debug mode
 	if (argc == 3) debug_mode = (strcmp(argv[2],"-d")==0);
 	//initialize memory space
@@ -34,30 +38,6 @@ int main(int argc, char* argv[]){
 	uint32_t pc_next = 1;
 	 //HI, LO special registers
 	int32_t HiLo[2] = {0};
-
-
-// //////////////////OLD WAY --> BOOOORING (and incorrect)
-// 	//open Binary file
-// 	ifstream infile;
-// 	infile.open(argv[1]);
-
-
-// 	//if IO error exit with correct exit code
-// 	if (!infile.is_open()) {
-// 		exit(-21);
-// 	}
-
-// 	//load instructions from Binary file into correct location in RAM 
-// 	string input;
-// 	int32_t offset = ADDR_INSTR;
-// 	while (infile >> input) {
-// 		uint32_t x = bin_string_to_uint32_t(input);
-// 		instructions.push_back(x);
-// 	}
-
-// ///////////////////////////////////////////////////////////////////////	
-
-
 
 /////////////////NEW WAY --> 100% SWAG
 	streampos size;
@@ -93,19 +73,23 @@ int main(int argc, char* argv[]){
 	//execute instructions
 	while (pc < instructions.size()){
 		execute(instructions, data, registers, pc, pc_next, HiLo);
-		//if 'non-pc-related' instruction has been executed
-		if (pc_next == 0) break; //because jr sets pc_next to zero 
+		//from pc & pc_next understand what instruction has been executed
+		if (pc_next == 0){ //because jr sets pc_next to zero
+			execute(instructions, data, registers, ++pc, pc_next, HiLo);
+			break;  
+		}
+		//if 'non-pc-related' instruction has been executed 
 		else if (pc_next == pc + 1){
 			//update pc & pc_next as usual
 			pc++;
 			pc_next++;
-			//if (pc > instructions.size()) exit(-11);
+			if (pc > instructions.size()) exit(-11);
 		}				
 		//if branch/jump has been executed
 		else{
 			if (debug_mode) cout << "entered pc update" << pc << endl;
 			//check that there is an instruction to be executed!
-			//if (pc + 1 > instructions.size()) exit(-11);
+			if (pc + 1 > instructions.size()) exit(-11);
 			//execute next instruction because of delay slot
 			execute(instructions, data, registers, ++pc, pc_next, HiLo);
 			//update pc to point to new instruction
@@ -114,8 +98,13 @@ int main(int argc, char* argv[]){
 		}
 	}
 	char exit_result = (char) registers[2];
-  exit(exit_result);
+  	exit(exit_result);
+
+	//unknown exception handler
+	}catch(...) {exit(-20);}
+	return 0;
 }
+
 
 uint32_t bin_string_to_uint32_t(string input) {
 	uint32_t x = 0;
@@ -655,8 +644,8 @@ void lui(uint32_t &dest_reg, int32_t &immediate, int32_t (&registers)[32]){
 }
 
 void lb(uint32_t address, uint8_t* data, uint32_t dest_reg, int32_t (&registers)[32]){
-		//check if mem to be accessed is between correct bounds for data space
-	if (address >= ADDR_DATA && address < ADDR_DATA + DATA_SIZE){
+		//check if mem to be accessed is between correct bounds for data space or instructions space
+	if ((address >= ADDR_DATA && address < ADDR_DATA + DATA_SIZE) /*|| (address >= ADDR_INSTR && address < ADDR_INSTR + INSTR_SIZE)*/){
 		//remove data offset and read
 		int8_t temp = data[address - ADDR_DATA];
 		//check if sign extension is needed
@@ -664,12 +653,14 @@ void lb(uint32_t address, uint8_t* data, uint32_t dest_reg, int32_t (&registers)
 		else registers[dest_reg] = (int32_t)temp;
 	}
 	//else check if instruction is trying to read ADDR_GETC location
-	else if (address == 0x30000000){
+	else if (address == 0x30000003){
 		//read from keyboard
-		cin >> registers[dest_reg];
+		char c = getchar();
+		if (c != EOF) registers[dest_reg] = (int32_t)c;
+		else registers[dest_reg] = -1;
 	}
 	//if other ADDR_GETC locations don't to anything
-	else if (address > 0x30000000 && address < 0x30000004) return;
+	else if (address >= 0x30000000 && address < 0x30000003) return;
 	//otherwise return error code
 	else exit(-11);
 }
@@ -677,8 +668,8 @@ void lb(uint32_t address, uint8_t* data, uint32_t dest_reg, int32_t (&registers)
 void lh(uint32_t address, uint8_t* data, uint32_t dest_reg, int32_t (&registers)[32]){
 	//check for address alignment
 	if (address % 2 != 0) exit(-11);
-	//check if mem to be accessed is between correct bounds for data space
-	if (address >= ADDR_DATA && address < ADDR_DATA + DATA_SIZE){
+		//check if mem to be accessed is between correct bounds for data space or instructions space
+	if ((address >= ADDR_DATA && address < ADDR_DATA + DATA_SIZE) /* || (address >= ADDR_INSTR && address < ADDR_INSTR + INSTR_SIZE) */){
 		//remove offset to address
 		address -= ADDR_DATA;
 		//load higher byte
@@ -690,20 +681,22 @@ void lh(uint32_t address, uint8_t* data, uint32_t dest_reg, int32_t (&registers)
 		else registers[dest_reg] = (int32_t)temp;
 	}
 	//else check if instruction is trying to read ADDR_GETC location
-	else if (address == 0x30000000){
+	else if (address == 0x30000002){
 		//read from keyboard
-		cin >> registers[dest_reg];
+		char c = getchar();
+		if (c != EOF) registers[dest_reg] = (int32_t)c;
+		else registers[dest_reg] = -1;
 	}
 	//if other ADDR_GETC locations don't to anything
-	else if (address == 0x30000002) return;
+	else if (address == 0x30000000) return;
 	//otherwise return error code
 	else exit(-11);
 
 }
 	
 void lwl(uint32_t address, uint8_t* data, uint32_t dest_reg, int32_t (&registers)[32]){
-	//check if mem to be accessed is between correct bounds for data space
-	if (!(address >= ADDR_DATA && address < ADDR_DATA + DATA_SIZE)) exit(-11);
+		//check if mem to be accessed is between correct bounds for data space or instructions space
+	if (!(address >= ADDR_DATA && address < ADDR_DATA + DATA_SIZE) /* && !(address >= ADDR_INSTR && address < ADDR_INSTR + INSTR_SIZE) */) exit(-11);
 	//infer unalignment from address
 	uint32_t unalignment = 4 - (address % 4);
 	//if no unalignment execute normal load word
@@ -727,8 +720,8 @@ void lwl(uint32_t address, uint8_t* data, uint32_t dest_reg, int32_t (&registers
 void lw(uint32_t address, uint8_t* data, uint32_t dest_reg, int32_t (&registers)[32]){
 	//check for address alignment
 	if (address % 4 != 0) exit(-11);
-	//check if mem to be accessed is between correct bounds for data space
-	if (address >= ADDR_DATA && address < ADDR_DATA + DATA_SIZE){
+		//check if mem to be accessed is between correct bounds for data space or instructions space
+	if ((address >= ADDR_DATA && address < ADDR_DATA + DATA_SIZE) /* || (address >= ADDR_INSTR && address < ADDR_INSTR + INSTR_SIZE) */){
 		//remove offset to address
 		address -= ADDR_DATA;
 		//load highest byte
@@ -744,7 +737,9 @@ void lw(uint32_t address, uint8_t* data, uint32_t dest_reg, int32_t (&registers)
 	//else check if instruction is trying to read ADDR_GETC location
 	else if (address == 0x30000000){
 		//read from keyboard
-		cin >> registers[dest_reg];
+		char c = getchar();
+		if (c != EOF) registers[dest_reg] = (int32_t)c;
+		else registers[dest_reg] = -1;
 	}
 	//otherwise return error code
 	else exit(-11);
@@ -752,21 +747,21 @@ void lw(uint32_t address, uint8_t* data, uint32_t dest_reg, int32_t (&registers)
 }
 
 void lbu(uint32_t address, uint8_t* data, uint32_t dest_reg, int32_t (&registers)[32]){
-		//check if mem to be accessed is between correct bounds for data space
-	if (address >= ADDR_DATA && address < ADDR_DATA + DATA_SIZE){
+		//check if mem to be accessed is between correct bounds for data space or instructions space
+	if ((address >= ADDR_DATA && address < ADDR_DATA + DATA_SIZE) /* || (address >= ADDR_INSTR && address < ADDR_INSTR + INSTR_SIZE) */){
 		//remove data offset and read
 		uint32_t temp = data[address - ADDR_DATA];
 		registers[dest_reg] = temp & 0x000000FF;
 	}
 	//else check if instruction is trying to read ADDR_GETC location
-	else if (address == 0x30000000){
+	else if (address == 0x30000003){
 		//read from keyboard
-		uint32_t temp;
-		cin >> temp;
-		registers[dest_reg] = temp;
+		char c = getchar();
+		if (c != EOF) registers[dest_reg] = (uint32_t)c;
+		else registers[dest_reg] = -1;
 	}
 	//if other ADDR_GETC locations don't to anything
-	else if (address > 0x30000000 && address < 0x30000004) return;
+	else if (address >= 0x30000000 && address < 0x30000003) return;
 	//otherwise return error code
 	else exit(-11);
 }
@@ -774,8 +769,8 @@ void lbu(uint32_t address, uint8_t* data, uint32_t dest_reg, int32_t (&registers
 void lhu(uint32_t address, uint8_t* data, uint32_t dest_reg, int32_t (&registers)[32]){
 	//check for address alignment
 	if (address % 2 != 0) exit(-11);
-	//check if mem to be accessed is between correct bounds for data space
-	if (address >= ADDR_DATA && address < ADDR_DATA + DATA_SIZE){
+		//check if mem to be accessed is between correct bounds for data space or instructions space
+	if ((address >= ADDR_DATA && address < ADDR_DATA + DATA_SIZE) /* || (address >= ADDR_INSTR && address < ADDR_INSTR + INSTR_SIZE) */){
 		//remove offset to address
 		address = address - ADDR_DATA;
 		//load higher byte
@@ -785,20 +780,22 @@ void lhu(uint32_t address, uint8_t* data, uint32_t dest_reg, int32_t (&registers
 		registers[dest_reg] = temp & 0x0000FFFF;
 	}
 	//else check if instruction is trying to read ADDR_GETC location
-	else if (address == 0x30000000){
+	else if (address == 0x30000002){
 		//read from keyboard
-		cin >> registers[dest_reg];
+		char c = getchar();
+		if (c != EOF) registers[dest_reg] = (uint32_t)c;
+		else registers[dest_reg] = -1;
 	}
 	//if other ADDR_GETC locations don't to anything
-	else if (address == 0x30000002) return;
+	else if (address == 0x30000000) return;
 	//otherwise return error code
 	else exit(-11);
 
 }
 
 void lwr(int32_t address, uint8_t* data, uint32_t dest_reg, int32_t (&registers)[32]){
-	//check if mem to be accessed is between correct bounds for data space
-	if (!(address >= ADDR_DATA && address < ADDR_DATA + DATA_SIZE)) exit(-11);
+	//check if mem to be accessed is between correct bounds for data space or instructions space
+	if (!(address >= ADDR_DATA && address < ADDR_DATA + DATA_SIZE) /* && !(address >= ADDR_INSTR && address < ADDR_INSTR + INSTR_SIZE) */) exit(-11);
 	//infer unalignment from address
 	uint32_t unalignment = address % 4;
 	//if no unalignment execute normal load word
@@ -827,7 +824,7 @@ void sb(uint32_t address, uint8_t* data, uint8_t value){
 	}
 	//else check if instruction is trying to write ADDR_PUTC location
 	else if (address == 0x30000007){
-		cout << value << endl;
+		putchar((int)((char)value));
 	}
 	else if (address > 0x30000003 && address < 0x30000007) return;
 	//otherwise return error code
