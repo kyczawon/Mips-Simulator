@@ -6,6 +6,7 @@
 #include <stdint.h>
 #include <cmath>
 #include <sstream>
+#include <cstring>
 #include <stdio.h>
 #include "testbench.hpp"
 using namespace std;
@@ -26,6 +27,7 @@ int main(int argc, char* argv[])
     }
 
     test_jr(test_id, debug_mode, output);
+    test_put_char(test_id, debug_mode, output);
     test_R_and_I(test_id, debug_mode, output);
     test_sl(test_id, debug_mode, output);
     test_muldiv(test_id, debug_mode, output);
@@ -62,14 +64,61 @@ void test_jr(int& test_id, bool debug_mode, ofstream& output){
     int32_t result=0, exit_code=0;
     get_simulator_output(debug_mode, result, exit_code);
     string status = "Fail";
-    stringstream message;
+    stringstream message, message2;
     message << ",[jr $zero expected: -207 got: " << exit_code << "]";
+    message2 << ",[ori -207 expected: -207 got: " << exit_code << "]";
 
     if (exit_code == -207) {
         status = "Pass";
     }
-    cout << test_id << "| jr" << ", " << status << ", Alelo " << message.str() << endl;
-    output << test_id << "| jr" << ", " << status << ", Alelo " << message.str() << endl;
+    cout << test_id++ << ", jr" << ", " << status << ", Alelo " << message.str() << endl;
+    cout << test_id << ", jr" << ", " << status << ", Alelo " << message2.str() << endl;
+    output << test_id++ << ", jr" << ", " << status << ", Alelo " << message.str() << endl;
+    output << test_id << ", jr" << ", " << status << ", Alelo " << message2.str() << endl;
+}
+
+void test_put_char(int& test_id, bool debug_mode, ofstream& output){
+    ///////////////////WRITE TO BINARY FILE/////////////////
+    //open output file in binary mode
+    ofstream outfile ("test/temp/binary.bin", ofstream::binary);
+    if (!outfile.is_open()) {
+        cout << "binary file could not be created" << endl;
+        exit(EXIT_FAILURE);
+    }
+    // allocate memory for OUTPUT BUFFER --> can it be inferred at runtime? (or hardcoded?)
+    vector<char> instr_bytes;
+    
+    /////FILL BUFFER/////
+    //ORI $s2 $s2 0x3631
+    populate_vector(instr_bytes, "00110110010100100011011000110001");
+    //lui t0 0x3000
+    populate_vector(instr_bytes, "00111100000010000011000000000000");
+    //sw s2 0x0004 t0
+    populate_vector(instr_bytes, "10101101000100100000000000000100");
+    //jr $zero
+    populate_vector(instr_bytes, "00000000000000000000000000001000");
+
+    char* buffer = new char[instr_bytes.size()];
+    copy_vector_to_buffer(instr_bytes, buffer);
+
+    // write to outfile
+    outfile.write (buffer,instr_bytes.size());
+    // release dynamically-allocated memory and close output file
+    delete[] buffer;
+    outfile.close();
+    ////////////////////////////////////////////////////////
+
+    int32_t result=0, exit_code=0;
+    get_simulator_lsb_output(debug_mode, result, exit_code);
+    string status = "Fail";
+    stringstream message, message2;
+    message << ",[sw $zero expected: 49 got: " << result << "| Expected exit: 0 got: " << exit_code << "]";;
+
+    if (result == 49 && exit_code == 0) {
+        status = "Pass";
+    }
+    cout << test_id++ << ", sw" << ", " << status << ", Alelo " << message.str() << endl;
+    output << test_id++ << ", sw" << ", " << status << ", Alelo " << message.str() << endl;
 }
 
 void populate_vector(vector<char> &instr_bytes, string instruction){
@@ -125,8 +174,6 @@ void test_link_fwd(int& test_id, bool debug_mode, ofstream& output){
         populate_vector(instr_bytes, "00100010010100100000000000000001");
         //s2 to out
         s2_to_output(instr_bytes);
-        //jr $zero
-        populate_vector(instr_bytes, "00000000000000000000000000001000");
         //addi $s2 $s2 0x1
         populate_vector(instr_bytes, "00100010010100100000000000000001");
         //jr $ra
@@ -331,8 +378,6 @@ void test_branch(int& test_id, bool debug_mode, ofstream& output){
         //addi $s3 $s3 0x0
         populate_vector(instr_bytes, "00100010011100110000000000000000");
         s2_to_output(instr_bytes);
-        //jr $zero
-        populate_vector(instr_bytes, "00000000000000000000000000001000");
         //instruction to test with offset -14
         populate_vector(instr_bytes, instr + "1111111111110010");
         //addi $s2 $s2 0x1
@@ -466,6 +511,8 @@ void s2_to_output(vector<char>& instr_bytes) {
     populate_vector(instr_bytes, "10101101000100100000000000000100");
     //sw s5 0x0004 t0
     populate_vector(instr_bytes, "10101101000101010000000000000100");
+    //jr $zero
+    populate_vector(instr_bytes, "00000000000000000000000000001000");
 }
 
 void test_sl(int& test_id, bool debug_mode, ofstream& output){
@@ -704,6 +751,45 @@ void test_muldiv(int& test_id, bool debug_mode, ofstream& output){
         instructions.close();
 }
 
+void get_simulator_lsb_output(bool debug_mode, int32_t& result, int32_t& exit_code) {
+    FILE *fp;
+    int status;
+    char output[1024];
+
+    string simulator_command = "bin/mips_simulator test/temp/binary.bin";
+
+    if (debug_mode) simulator_command += " -d";
+
+    fp = popen(simulator_command.c_str(), "r");
+
+    /* Handle error */
+    if (fp == NULL) {
+        cout << "error opening simulator" << endl;
+    }
+
+    result = 0;
+    stringstream ss;
+    while (fgets(output, 1024, fp) != NULL) {
+        if (debug_mode) {
+            ss << output << endl;
+        } else {
+            char out = output[0];
+            if (out == '\n') {
+                result = 10;
+            } else {
+                result = out;
+            }
+        }
+    }
+    if (debug_mode) cout << ss.str() << endl;
+    status = pclose(fp);
+    exit_code = WEXITSTATUS(status);
+    if (exit_code != 0) exit_code-=256;
+    if (status == -1) {
+         cout << "error closing simulator" << endl;
+    }
+}
+
 void get_simulator_output(bool debug_mode, int32_t& result, int32_t& exit_code) {
     FILE *fp;
     int status;
@@ -737,7 +823,7 @@ void get_simulator_output(bool debug_mode, int32_t& result, int32_t& exit_code) 
             }
         }
     }
-    if (1) cout << ss.str() << endl;
+    if (debug_mode) cout << ss.str() << endl;
     status = pclose(fp);
     exit_code = WEXITSTATUS(status);
     if (exit_code != 0) exit_code-=256;
