@@ -25,12 +25,12 @@ int main(int argc, char* argv[])
         exit(EXIT_FAILURE);
     }
 
-    // test_jr(test_id, debug_mode, output);
-    // test_R_and_I(test_id, debug_mode, output);
-    // test_sl(test_id, debug_mode, output);
+    test_jr(test_id, debug_mode, output);
+    test_R_and_I(test_id, debug_mode, output);
+    test_sl(test_id, debug_mode, output);
     test_muldiv(test_id, debug_mode, output);
-    // test_branch(test_id, debug_mode, output);
-    // test_link_fwd(test_id, debug_mode, output);
+    test_branch(test_id, debug_mode, output);
+    test_link_fwd(test_id, debug_mode, output);
 }
 
 void test_jr(int& test_id, bool debug_mode, ofstream& output){
@@ -123,23 +123,8 @@ void test_link_fwd(int& test_id, bool debug_mode, ofstream& output){
         populate_vector(instr_bytes, "00100010010100100000000000000001");
         //addi $s2 $s2 0x1
         populate_vector(instr_bytes, "00100010010100100000000000000001");
-        //-----------put word to output-----------
-        //lui t0 0x3000
-        populate_vector(instr_bytes, "00111100000010000011000000000000");
-        //sb s2 0x0004 t0
-        populate_vector(instr_bytes, "10100001000100100000000000000100");
-        //srl s2 s2 0x0008
-        populate_vector(instr_bytes, "00000000000100101001001000000010");
-        //sb s2 0x0004 t0
-        populate_vector(instr_bytes, "10100001000100100000000000000100");
-        //srl s2 s2 0x0008
-        populate_vector(instr_bytes, "00000000000100101001001000000010");
-        //sb s2 0x0004 t0
-        populate_vector(instr_bytes, "10100001000100100000000000000100");
-        //srl s2 s2 0x0008
-        populate_vector(instr_bytes, "00000000000100101001001000000010");
-        //sb s2 0x0004 t0
-        populate_vector(instr_bytes, "10100001000100100000000000000100");
+        //s2 to out
+        s2_to_output(instr_bytes);
         //jr $zero
         populate_vector(instr_bytes, "00000000000000000000000000001000");
         //addi $s2 $s2 0x1
@@ -290,25 +275,8 @@ void test_branch(int& test_id, bool debug_mode, ofstream& output){
         populate_vector(instr_bytes, "00100010010100100000000000000001");
         //addi $s2 $s2 0x1
         populate_vector(instr_bytes, "00100010010100100000000000000001");
-        //-----------put word to output-----------
-        //lui t0 0x3000
-        populate_vector(instr_bytes, "00111100000010000011000000000000");
-        //sb s2 0x0004 t0
-        populate_vector(instr_bytes, "10100001000100100000000000000100");
-        //srl s2 s2 0x0008
-        populate_vector(instr_bytes, "00000000000100101001001000000010");
-        //sb s2 0x0004 t0
-        populate_vector(instr_bytes, "10100001000100100000000000000100");
-        //srl s2 s2 0x0008
-        populate_vector(instr_bytes, "00000000000100101001001000000010");
-        //sb s2 0x0004 t0
-        populate_vector(instr_bytes, "10100001000100100000000000000100");
-        //srl s2 s2 0x0008
-        populate_vector(instr_bytes, "00000000000100101001001000000010");
-        //sb s2 0x0004 t0
-        populate_vector(instr_bytes, "10100001000100100000000000000100");
-        //jr $zero
-        populate_vector(instr_bytes, "00000000000000000000000000001000");
+
+        s2_to_output(instr_bytes);
 
         char* buffer = new char[instr_bytes.size()];
         copy_vector_to_buffer(instr_bytes, buffer);
@@ -358,54 +326,21 @@ void test_branch(int& test_id, bool debug_mode, ofstream& output){
         populate_vector(instr_bytes, "0011110000010000" + input2_binary.substr(0, 16));
         //ori s0 s0 - 16 least significant bits of input 2
         populate_vector(instr_bytes, "0011011000010000" + input2_binary.substr(16, 32));
-        //Beq $zero $zero 0x10
-        populate_vector(instr_bytes, "00010000000000000000000000001010");
+        //Beq $zero $zero 0x14
+        populate_vector(instr_bytes, "00010000000000000000000000001110");
         //addi $s3 $s3 0x0
         populate_vector(instr_bytes, "00100010011100110000000000000000");
-        //-----------put word to output-----------
-        //lui t0 0x3000
-        populate_vector(instr_bytes, "00111100000010000011000000000000");
-        //sb s2 0x0004 t0
-        populate_vector(instr_bytes, "10100001000100100000000000000100");
-        //srl s2 s2 0x0008
-        populate_vector(instr_bytes, "00000000000100101001001000000010");
-        //sb s2 0x0004 t0
-        populate_vector(instr_bytes, "10100001000100100000000000000100");
-        //srl s2 s2 0x0008
-        populate_vector(instr_bytes, "00000000000100101001001000000010");
-        //sb s2 0x0004 t0
-        populate_vector(instr_bytes, "10100001000100100000000000000100");
-        //srl s2 s2 0x0008
-        populate_vector(instr_bytes, "00000000000100101001001000000010");
-        //sb s2 0x0004 t0
-        populate_vector(instr_bytes, "10100001000100100000000000000100");
+        s2_to_output(instr_bytes);
         //jr $zero
         populate_vector(instr_bytes, "00000000000000000000000000001000");
-        //instruction to test with offset -10
-        populate_vector(instr_bytes, instr + "1111111111110110");
+        //instruction to test with offset -14
+        populate_vector(instr_bytes, instr + "1111111111110010");
         //addi $s2 $s2 0x1
         populate_vector(instr_bytes, "00100010010100100000000000000001");
         //addi $s2 $s2 0x1
         populate_vector(instr_bytes, "00100010010100100000000000000001");
-        //-----------put word to output-----------
-        //lui t0 0x3000
-        populate_vector(instr_bytes, "00111100000010000011000000000000");
-        //sb s2 0x0004 t0
-        populate_vector(instr_bytes, "10100001000100100000000000000100");
-        //srl s2 s2 0x0008
-        populate_vector(instr_bytes, "00000000000100101001001000000010");
-        //sb s2 0x0004 t0
-        populate_vector(instr_bytes, "10100001000100100000000000000100");
-        //srl s2 s2 0x0008
-        populate_vector(instr_bytes, "00000000000100101001001000000010");
-        //sb s2 0x0004 t0
-        populate_vector(instr_bytes, "10100001000100100000000000000100");
-        //srl s2 s2 0x0008
-        populate_vector(instr_bytes, "00000000000100101001001000000010");
-        //sb s2 0x0004 t0
-        populate_vector(instr_bytes, "10100001000100100000000000000100");
-        //jr $zero
-        populate_vector(instr_bytes, "00000000000000000000000000001000");
+        
+        s2_to_output(instr_bytes);
 
         char* buffer2 = new char[instr_bytes.size()];
         copy_vector_to_buffer(instr_bytes, buffer2);
@@ -473,23 +408,8 @@ void test_R_and_I(int& test_id, bool debug_mode, ofstream& output){
             populate_vector(instr_bytes, "0011011000010000" + input2_binary.substr(16, 32));
             //instruction to test
             populate_vector(instr_bytes, instr);
-            //-----------put word to output-----------
-            //lui t0 0x3000
-            populate_vector(instr_bytes, "00111100000010000011000000000000");
-            //sb s2 0x0004 t0
-            populate_vector(instr_bytes, "10100001000100100000000000000100");
-            //srl s2 s2 0x0008
-            populate_vector(instr_bytes, "00000000000100101001001000000010");
-            //sb s2 0x0004 t0
-            populate_vector(instr_bytes, "10100001000100100000000000000100");
-            //srl s2 s2 0x0008
-            populate_vector(instr_bytes, "00000000000100101001001000000010");
-            //sb s2 0x0004 t0
-            populate_vector(instr_bytes, "10100001000100100000000000000100");
-            //srl s2 s2 0x0008
-            populate_vector(instr_bytes, "00000000000100101001001000000010");
-            //sb s2 0x0004 t0
-            populate_vector(instr_bytes, "10100001000100100000000000000100");
+            
+            s2_to_output(instr_bytes);
             
             char* buffer = new char[instr_bytes.size()];
             copy_vector_to_buffer(instr_bytes, buffer);
@@ -518,6 +438,34 @@ void test_R_and_I(int& test_id, bool debug_mode, ofstream& output){
             
         }
         instructions.close();
+}
+
+void s2_to_output(vector<char>& instr_bytes) {
+     //-----------put word to output-----------
+    //lui t0 0x3000
+    populate_vector(instr_bytes, "00111100000010000011000000000000");
+    //srl s3 s2 0x18 ready
+    populate_vector(instr_bytes, "00000000000100101001111000000010");
+    //srl s4 s2 0x10
+    populate_vector(instr_bytes, "00000000000100101010010000000010");
+    //andi s4 s4 0x00FF ready
+    populate_vector(instr_bytes, "00110010100101000000000011111111");
+    //sll s2 s2 0x10
+    populate_vector(instr_bytes, "00000000000100101001010000000000");
+    //srl s5 s2 0x10
+    populate_vector(instr_bytes, "00000000000100101010110000000010");
+    //andi s5 s5 0x00FF ready
+    populate_vector(instr_bytes, "00110010101101010000000011111111");
+    //srl s2 s2 0x18
+    populate_vector(instr_bytes, "00000000000100101001011000000010");
+    //sw s3 0x0004 t0
+    populate_vector(instr_bytes, "10101101000100110000000000000100");
+    //sw s4 0x0004 t0
+    populate_vector(instr_bytes, "10101101000101000000000000000100");
+    //sw s2 0x0004 t0
+    populate_vector(instr_bytes, "10101101000100100000000000000100");
+    //sw s5 0x0004 t0
+    populate_vector(instr_bytes, "10101101000101010000000000000100");
 }
 
 void test_sl(int& test_id, bool debug_mode, ofstream& output){
@@ -595,23 +543,7 @@ void test_sl(int& test_id, bool debug_mode, ofstream& output){
             populate_vector(instr_bytes, "1000110001110010" + load_address_binary.substr(16, 32));
         }
         
-        //-----------put word to output-----------
-        //lui t0 0x3000
-        populate_vector(instr_bytes, "00111100000010000011000000000000");
-        //sb s2 0x0004 t0
-        populate_vector(instr_bytes, "10100001000100100000000000000100");
-        //srl s2 s2 0x0008
-        populate_vector(instr_bytes, "00000000000100101001001000000010");
-        //sb s2 0x0004 t0
-        populate_vector(instr_bytes, "10100001000100100000000000000100");
-        //srl s2 s2 0x0008
-        populate_vector(instr_bytes, "00000000000100101001001000000010");
-        //sb s2 0x0004 t0
-        populate_vector(instr_bytes, "10100001000100100000000000000100");
-        //srl s2 s2 0x0008
-        populate_vector(instr_bytes, "00000000000100101001001000000010");
-        //sb s2 0x0004 t0
-        populate_vector(instr_bytes, "10100001000100100000000000000100");
+        s2_to_output(instr_bytes);
 
         char* buffer = new char[instr_bytes.size()];
         copy_vector_to_buffer(instr_bytes, buffer);
@@ -631,7 +563,7 @@ void test_sl(int& test_id, bool debug_mode, ofstream& output){
         string hexaddress;
         if (is_store) hexaddress = hex_store_address;
         else  hexaddress = hex_load_address;
-        message << ",[ " << instr_name << " " << input1 << " " << hexaddress << expected_result
+        message << ",[ " << instr_name << " " << input1 << " " << hexaddress << " " << expected_result
         << " got: " << result << "| Expected exit: " << expected_exit << " got: " << exit_code << "]";
 
         if (result == expected_result && exit_code == expected_exit) {
@@ -688,23 +620,7 @@ void test_muldiv(int& test_id, bool debug_mode, ofstream& output){
             //mfhi s2
             populate_vector(instr_bytes, "00000000000000001001000000010000");
 
-            //-----------put word s2 to output-----------
-            //lui t0 0x3000
-            populate_vector(instr_bytes, "00111100000010000011000000000000");
-            //sb s2 0x0004 t0
-            populate_vector(instr_bytes, "10100001000100100000000000000100");
-            //srl s2 s2 0x0008
-            populate_vector(instr_bytes, "00000000000100101001001000000010");
-            //sb s2 0x0004 t0
-            populate_vector(instr_bytes, "10100001000100100000000000000100");
-            //srl s2 s2 0x0008
-            populate_vector(instr_bytes, "00000000000100101001001000000010");
-            //sb s2 0x0004 t0
-            populate_vector(instr_bytes, "10100001000100100000000000000100");
-            //srl s2 s2 0x0008
-            populate_vector(instr_bytes, "00000000000100101001001000000010");
-            //sb s2 0x0004 t0
-            populate_vector(instr_bytes, "10100001000100100000000000000100");
+            s2_to_output(instr_bytes);
 
             char* buffer = new char[instr_bytes.size()];
             copy_vector_to_buffer(instr_bytes, buffer);
@@ -756,23 +672,8 @@ void test_muldiv(int& test_id, bool debug_mode, ofstream& output){
 
             //mflo s2
             populate_vector(instr_bytes, "00000000000000001001000000010010");
-            //-----------put word s2 to output-----------
-            //lui t0 0x3000
-            populate_vector(instr_bytes, "00111100000010000011000000000000");
-            //sb s2 0x0004 t0
-            populate_vector(instr_bytes, "10100001000100100000000000000100");
-            //srl s2 s2 0x0008
-            populate_vector(instr_bytes, "00000000000100101001001000000010");
-            //sb s2 0x0004 t0
-            populate_vector(instr_bytes, "10100001000100100000000000000100");
-            //srl s2 s2 0x0008
-            populate_vector(instr_bytes, "00000000000100101001001000000010");
-            //sb s2 0x0004 t0
-            populate_vector(instr_bytes, "10100001000100100000000000000100");
-            //srl s2 s2 0x0008
-            populate_vector(instr_bytes, "00000000000100101001001000000010");
-            //sb s2 0x0004 t0
-            populate_vector(instr_bytes, "10100001000100100000000000000100");
+
+            s2_to_output(instr_bytes);
             
             char* buffer2 = new char[instr_bytes.size()];
             copy_vector_to_buffer(instr_bytes, buffer2);
@@ -820,7 +721,7 @@ void get_simulator_output(bool debug_mode, int32_t& result, int32_t& exit_code) 
     }
 
     result = 0;
-    int count = 0;
+    int count = 3;
     stringstream ss;
     while (fgets(output, 1024, fp) != NULL) {
         if (debug_mode) {
@@ -830,7 +731,7 @@ void get_simulator_output(bool debug_mode, int32_t& result, int32_t& exit_code) 
                 test_line_break(fp, output, result, count);
             } else {
                 uint8_t num = (uint8_t) *output;
-                result = result | (uint32_t)(num << 8 * count++);
+                result = result | (uint32_t)(num << (8 * count--));
             }
         }
     }

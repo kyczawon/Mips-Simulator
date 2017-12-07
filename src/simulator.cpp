@@ -36,71 +36,63 @@ int main(int argc, char* argv[]){
 	int32_t HiLo[2] = {0};
 
 
-//////////////////OLD WAY --> BOOOORING (and incorrect)
-	//open Binary file
-	ifstream infile;
-	infile.open(argv[1]);
+// //////////////////OLD WAY --> BOOOORING (and incorrect)
+// 	//open Binary file
+// 	ifstream infile;
+// 	infile.open(argv[1]);
 
 
+// 	//if IO error exit with correct exit code
+// 	if (!infile.is_open()) {
+// 		exit(-21);
+// 	}
+
+// 	//load instructions from Binary file into correct location in RAM 
+// 	string input;
+// 	int32_t offset = ADDR_INSTR;
+// 	while (infile >> input) {
+// 		uint32_t x = bin_string_to_uint32_t(input);
+// 		instructions.push_back(x);
+// 	}
+
+// ///////////////////////////////////////////////////////////////////////	
+
+
+
+/////////////////NEW WAY --> 100% SWAG
+	streampos size;
+	char * memblock;
+	//open file with 'binary' attributes
+  	ifstream infile (argv[1], ios::in|ios::binary|ios::ate);
 	//if IO error exit with correct exit code
-	if (!infile.is_open()) {
-		exit(-21);
+	if (!infile.is_open()) exit(-21);
+	//else read the file and store in temporary dinamically allocated array of bytes
+	size = infile.tellg();
+	memblock = new char [size];
+	infile.seekg (0, ios::beg);
+	infile.read (memblock, size);
+	infile.close();
+	//combine bytes and copy instructions in vector
+	uint32_t temp;
+	for(int i = 0; i < size; i += 4){
+		temp = 0;
+		//combine adjacent bytes
+		for(int j = 0; j < 4; j++){
+			temp = temp | ((uint8_t)memblock[i + j] << (8 * (3 - j)));
+		}
+		instructions.push_back(temp);
 	}
-
-	//load instructions from Binary file into correct location in RAM 
-	string input;
-	int32_t offset = ADDR_INSTR;
-	while (infile >> input) {
-		uint32_t x = bin_string_to_uint32_t(input);
-		instructions.push_back(x);
-	}
-
-///////////////////////////////////////////////////////////////////////	
-
-
-
-///////////////////NEW WAY --> 100% SWAG
-	// streampos size;
-	// char * memblock;
-	// //open file with 'binary' attributes
-  	// ifstream infile (argv[1], ios::in|ios::binary|ios::ate);
-	// //if IO error exit with correct exit code
-	// if (!infile.is_open()) exit(-21);
-	// //else read the file and store in temporary dinamically allocated array of bytes
-	// size = infile.tellg();
-	// memblock = new char [size];
-	// infile.seekg (0, ios::beg);
-	// infile.read (memblock, size);
-	// infile.close();
-	// //combine bytes and copy instructions in vector
-	// uint32_t temp;
-	// for(int i = 0; i < size; i += 4){
-	// 	temp = 0;
-	// 	//combine adjacent bytes
-	// 	for(int j = 0; j < 4; j++){
-	// 		if (debug_mode) cout << "bit " << 4-j << " : " << ((uint16_t)memblock[i+j]) << endl;
-	// 		temp = temp | ((uint8_t)memblock[i + j] << (8 * (3 - j)));
-	// 	}
-	// 	//store in vector
-	// 	if (debug_mode) cout << "instruction inserted!\n";
-	// 	if (debug_mode) cout << "instr code: " << temp << endl;
-	// 	instructions.push_back(temp);
-	// }
-	// //delete temporary array of bytes
-   	// delete[] memblock;
-	// 	////	(this version of the I/O protocol with the input file has been implemented later on
-	// 	//// 	but all the simulator relies on the instructions to be stored as 32b words in a vector
-	// 	//// 	that is why we kept the vector as final data structure)
+	//delete temporary array of bytes
+   	delete[] memblock;
+		////	(this version of the I/O protocol with the input file has been implemented later on
+		//// 	but all the simulator relies on the instructions to be stored as 32b words in a vector
+		//// 	that is why we kept the vector as final data structure)
 
 
 
 	//execute instructions
 	while (pc < instructions.size()){
-		if (debug_mode) cout << "pc: " << pc << endl;
-		if (debug_mode) cout << "pc next: " << pc_next << endl;
 		execute(instructions, data, registers, pc, pc_next, HiLo);
-		if (debug_mode) cout << "after pc: " << pc << endl;
-		if (debug_mode) cout << "after pc next: " << pc_next << endl;
 		//if 'non-pc-related' instruction has been executed
 		if (pc_next == 0) break; //because jr sets pc_next to zero 
 		else if (pc_next == pc + 1){
@@ -457,17 +449,20 @@ void mtlo(uint32_t src_reg, int32_t (&registers)[32], int32_t (&HiLo)[2]){
 }
 
 void mult(uint32_t op1, uint32_t op2, int32_t (&registers)[32], int32_t (&HiLo)[2]){
-	int64_t product = registers[op1] * registers[op2];
+	if (debug_mode) cout << registers[op1] << "*" << registers[op2] << endl;
+	int64_t product = (int64_t)registers[op1] * (int64_t)registers[op2];
 	//put higher word in HI and lower word in LO
-	HiLo[0] = product >> 32;
-	HiLo[1] = product & 0x0000FFFF;
+	HiLo[1] = (int32_t) product;
+	HiLo[0] = (int32_t) (product >> 32);
 }
 
 void multu(uint32_t op1, uint32_t op2, int32_t (&registers)[32], int32_t (&HiLo)[2]){
-	uint64_t product = (uint32_t)registers[op1] * (uint32_t)registers[op2];
+	if (debug_mode) cout << (uint64_t)registers[op1] << "*" << (uint64_t)registers[op2] << endl;
+	uint64_t product = (uint64_t) ((uint32_t)registers[op1]) * (uint64_t)((uint32_t)registers[op2]);
 	//put higher word in HI and lower word in LO
-	HiLo[0] = product >> 32;
-	HiLo[1] = product & 0x0000FFFF;
+	HiLo[1] = (int32_t) product;
+	HiLo[0] = (int32_t) (product >> 32);
+	if (debug_mode) cout << "product " << product << " hi" << HiLo[0] << " lo" << HiLo[1] << endl;
 }
 
 void div(uint32_t op1, uint32_t op2, int32_t (&registers)[32], int32_t (&HiLo)[2]){
@@ -497,9 +492,11 @@ void divu(uint32_t op1, uint32_t op2, int32_t (&registers)[32], int32_t (&HiLo)[
 void add(uint32_t dest_reg, uint32_t op1, uint32_t op2, int32_t (&registers)[32]){
 	int32_t source1 = registers[op1];
 	int32_t source2 = registers[op2];
-	int64_t sum = source1 + source2;
+	if (debug_mode) cout << "source1 " << source1 << "source2 " << source2 << endl;
+	uint64_t sum = source1 + source2;
 	//check for signed/unsigned overflow
 	int32_t sum2 = source1 + source2;
+	if (debug_mode) cout << "sum " << sum << "sum2 " << sum2 << endl;
 	if (sum != sum2) exit(-10);
 	else registers[dest_reg] =  sum2;
 }
@@ -829,10 +826,10 @@ void sb(uint32_t address, uint8_t* data, uint8_t value){
 		if (debug_mode) cout << "value: " << (uint32_t) value << endl;
 	}
 	//else check if instruction is trying to write ADDR_PUTC location
-	else if (address == 0x30000004){
-		cout << (char) value << endl;
+	else if (address == 0x30000007){
+		cout << value << endl;
 	}
-	else if (address > 0x30000004 && address < 0x30000008) return;
+	else if (address > 0x30000003 && address < 0x30000007) return;
 	//otherwise return error code
 	else exit(-11);
 }
