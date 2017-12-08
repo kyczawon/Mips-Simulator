@@ -610,11 +610,10 @@ void bgtz(uint32_t &op, int32_t &immediate, int32_t (&registers)[32], uint32_t& 
 }
 
 void addi(uint32_t &dest_reg, uint32_t &src_reg, int32_t &immediate, int32_t (&registers)[32]){
-	int32_t source = registers[src_reg];
-	int64_t sum = source + immediate;
-	int32_t sum2 = source + immediate;
-	if (sum != sum2) exit(-10);
-	else registers[dest_reg] = sum2;
+	int32_t source1 = registers[src_reg];
+	if (((immediate > 0) && (source1 > pow(2,31) - 1 - immediate)) || ((immediate < 0) && (source1 < -pow(2,31) - immediate))) exit(-10);
+	int32_t sum = source1 + immediate;
+	registers[dest_reg] =  sum;
 }
 
 void addiu(uint32_t &dest_reg, uint32_t &src_reg, int32_t &immediate, int32_t (&registers)[32]){

@@ -30,12 +30,12 @@ int main(int argc, char* argv[])
         }
     }
 
-    // test_jr(test_id, debug_mode, output);
-    // test_put_char(test_id, debug_mode, output);
-    // test_R_and_I(test_id, debug_mode, output);
-    // test_sl(test_id, debug_mode, output);
-    // test_muldiv(test_id, debug_mode, output);
-    // test_branch(test_id, debug_mode, output);
+    test_jr(test_id, debug_mode, output);
+    test_put_char(test_id, debug_mode, output);
+    test_R_and_I(test_id, debug_mode, output);
+    test_sl(test_id, debug_mode, output);
+    test_muldiv(test_id, debug_mode, output);
+    test_branch(test_id, debug_mode, output);
     test_link_fwd(test_id, debug_mode, output);
 }
 
@@ -80,9 +80,9 @@ void test_jr(int& test_id, bool debug_mode, ofstream& output){
         status = "Pass";
     }
     cout << test_id++ << ", jr" << ", " << status << ", Alelo " << message.str() << endl;
-    cout << test_id << ", jr" << ", " << status << ", Alelo " << message2.str() << endl;
+    cout << test_id << ", ori" << ", " << status << ", Alelo " << message2.str() << endl;
     output << test_id++ << ", jr" << ", " << status << ", Alelo " << message.str() << endl;
-    output << test_id << ", jr" << ", " << status << ", Alelo " << message2.str() << endl;
+    output << test_id << ", ori" << ", " << status << ", Alelo " << message2.str() << endl;
 }
 
 void test_put_char(int& test_id, bool debug_mode, ofstream& output){
