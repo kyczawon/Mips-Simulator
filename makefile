@@ -50,7 +50,7 @@ simulator : bin/mips_simulator
 ## Testbench
 
 bin/mips_testbench : test/testbench.cpp
-	mkdir -p test
+	mkdir -p bin
 	g++ -std=c++11 -W -Wall test/testbench.cpp -o bin/mips_testbench
 
 # In order to comply with spec
