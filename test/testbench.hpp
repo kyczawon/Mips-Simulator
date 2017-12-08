@@ -11,6 +11,7 @@ void test_link_back(int& test_id, bool debug_mode, ofstream& output);
 void test_jr(int& test_id, bool debug_mode, ofstream& output);
 void test_line_break(FILE *fp, char* output, int32_t& result);
 void test_put_char(int& test_id, bool debug_mode, ofstream& output);
+void test_pc_out_of_range(int& test_id, bool debug_mode, ofstream& output);
 
 //helper functions
 void get_simulator_output(bool debug_mode, int32_t& result, int32_t& exit_code);

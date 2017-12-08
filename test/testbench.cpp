@@ -30,6 +30,7 @@ int main(int argc, char* argv[])
         }
     }
 
+    test_pc_out_of_range(test_id, debug_mode, output);
     test_jr(test_id, debug_mode, output);
     test_put_char(test_id, debug_mode, output);
     test_R_and_I(test_id, debug_mode, output);
@@ -73,16 +74,65 @@ void test_jr(int& test_id, bool debug_mode, ofstream& output){
     get_simulator_output(debug_mode, result, exit_code);
     string status = "Fail";
     stringstream message, message2;
-    message << ",[jr $zero expected: -207 got: " << exit_code << "]";
+    message << ",[jr $zero expected: -207 got: " << exit_code ;
     message2 << ",[ori -207 expected: -207 got: " << exit_code << "]";
 
     if (exit_code == -207) {
         status = "Pass";
+    } else {
+        message << "THIS TEST FAILED AND MOST SUBSEQUENT TEST WILL FAIL";
+        message2 << "THIS TEST FAILED AND MOST SUBSEQUENT TEST WILL FAIL";
     }
+    message << "]";
+    message2 << "]";
     cout << test_id++ << ", jr" << ", " << status << ", Alelo " << message.str() << endl;
     cout << test_id << ", ori" << ", " << status << ", Alelo " << message2.str() << endl;
     output << test_id++ << ", jr" << ", " << status << ", Alelo " << message.str() << endl;
     output << test_id << ", ori" << ", " << status << ", Alelo " << message2.str() << endl;
+}
+
+void test_pc_out_of_range(int& test_id, bool debug_mode, ofstream& output){
+    ///////////////////WRITE TO BINARY FILE/////////////////
+    //open output file in binary mode
+    ofstream outfile ("test/temp/binary.bin", ofstream::binary);
+    if (!outfile.is_open()) {
+        system("mkdir -p test/temp");
+        ofstream outfile ("test/temp/binary.bin", ofstream::binary);
+        if (!outfile.is_open()) {
+            cout << "Output file could not be created" << endl;
+            exit(EXIT_FAILURE);
+        }
+    }
+    // allocate memory for OUTPUT BUFFER --> can it be inferred at runtime? (or hardcoded?)
+    vector<char> instr_bytes;
+
+    /////FILL BUFFER/////
+    //ORI $v0 $v0 0x3631
+    populate_vector(instr_bytes, "00110100010000100011011000110001");
+    //jr $v0
+    populate_vector(instr_bytes, "00000000010000000000000000001000");
+    char* buffer = new char[instr_bytes.size()];
+    copy_vector_to_buffer(instr_bytes, buffer);
+
+    // write to outfile
+    outfile.write (buffer,instr_bytes.size());
+    // release dynamically-allocated memory and close output file
+    delete[] buffer;
+    outfile.close();
+    ////////////////////////////////////////////////////////
+
+    int32_t result=0, exit_code=0;
+    get_simulator_output(debug_mode, result, exit_code);
+    string status = "Fail";
+    stringstream message;
+    message << ",[jr $v1 expected exit_code: -11 got: " << exit_code;
+
+    if (exit_code == -11) {
+        status = "Pass";
+    }
+    message << "]";
+    cout << test_id++ << ", jr" << ", " << status << ", Alelo " << message.str() << endl;
+    output << test_id++ << ", jr" << ", " << status << ", Alelo " << message.str() << endl;
 }
 
 void test_put_char(int& test_id, bool debug_mode, ofstream& output){
@@ -124,11 +174,14 @@ void test_put_char(int& test_id, bool debug_mode, ofstream& output){
     get_simulator_lsb_output(debug_mode, result, exit_code);
     string status = "Fail";
     stringstream message, message2;
-    message << ",[sw $zero expected: 49 got: " << result << "| Expected exit: 0 got: " << exit_code << "]";;
+    message << ",[sw $zero expected: 49 got: " << result << "| Expected exit: 0 got: " << exit_code;
 
     if (result == 49 && exit_code == 0) {
         status = "Pass";
+    } else {
+        message << "THIS TEST FAILED AND MOST SUBSEQUENT TEST WILL FAIL";
     }
+    message << "]";
     cout << test_id++ << ", sw" << ", " << status << ", Alelo " << message.str() << endl;
     output << test_id++ << ", sw" << ", " << status << ", Alelo " << message.str() << endl;
 }

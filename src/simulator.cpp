@@ -99,7 +99,7 @@ int main(int argc, char* argv[]){
 		else{
 			if (debug_mode) cout << "entered pc update" << pc << endl;
 			//check that there is an instruction to be executed!
-			if (pc + 1 > instructions.size()) exit(-11);
+			if (pc_next > instructions.size()) exit(-11);
 			//execute next instruction because of delay slot
 			execute(instructions, data, registers, ++pc, pc_next, HiLo, instr_bytes);
 			//update pc to point to new instruction
@@ -728,8 +728,10 @@ void lwl(uint32_t address, uint8_t* data, uint32_t dest_reg, int32_t (&registers
 		return;
 	}
 	if (address >= ADDR_DATA && address < ADDR_DATA + DATA_SIZE){
+		if (debug_mode) cout << "address in lwl: " << address;
 		//apply offset to address
 		address -= ADDR_DATA;
+		if (debug_mode) cout << "address in lwl: " << address;
 		//load unaligned data
 		uint32_t temp = 0x0;
 		uint32_t past_val = registers[dest_reg];
@@ -874,15 +876,16 @@ void lwr(uint32_t address, uint8_t* data, uint32_t dest_reg, int32_t (&registers
 	}
 	//data mem
 	if (address >= ADDR_DATA && address < ADDR_DATA + DATA_SIZE){
+		if (debug_mode) cout << "address in lwr: " << address;
 		//apply offset to address
 		address -= ADDR_DATA;
+		if (debug_mode) cout << "address in lwr: " << address;
 		//load unaligned data
 		uint32_t temp = 0x0;
 		uint32_t past_val = registers[dest_reg];
-		++unalignment;
-		past_val = (past_val >> (8 * unalignment)) << (8 * unalignment);
-		for(uint32_t x = 0; x <= unalignment; x++){
-			temp = temp | ((uint32_t)data[address - x] << (8 * x));
+		past_val = (past_val >> (8 * (unalignment+1))) << (8 * (unalignment+1));
+		for(uint32_t x = 0; x < unalignment+1; x++){
+			temp = temp | ((uint32_t)data[address - unalignment + x]) << (8 * (unalignment - x));
 		}
 		registers[dest_reg] = past_val | temp;
 	}
@@ -893,10 +896,10 @@ void lwr(uint32_t address, uint8_t* data, uint32_t dest_reg, int32_t (&registers
 		//load unaligned data
 		uint32_t temp = 0x0;
 		uint32_t past_val = registers[dest_reg];
-		++unalignment;
+		unalignment++;
 		past_val = (past_val >> (8 * unalignment)) << (8 * unalignment);
-		for(uint32_t x = 0; x <= unalignment; x++){
-			temp = temp | ((uint32_t)instr_bytes[address - x] << (8 * x));
+		for(uint32_t x = 0; x < unalignment; x++){
+			temp = temp | ((uint32_t)data[address - x] >> (8 * (4-x)));
 		}
 		registers[dest_reg] = past_val | temp;
 	}
