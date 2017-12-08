@@ -16,7 +16,7 @@ int main(int argc, char* argv[])
     bool debug_mode = false;
     int test_id = 0;
     //debug mode
-    
+
     if (argc > 1) debug_mode = (strcmp(argv[1],"-d")==0);
     ofstream output;
     string output_name = "test/output/output.csv";
@@ -31,11 +31,11 @@ int main(int argc, char* argv[])
     }
 
     // test_jr(test_id, debug_mode, output);
-    test_put_char(test_id, debug_mode, output);
-    test_R_and_I(test_id, debug_mode, output);
-    test_sl(test_id, debug_mode, output);
-    test_muldiv(test_id, debug_mode, output);
-    test_branch(test_id, debug_mode, output);
+    // test_put_char(test_id, debug_mode, output);
+    // test_R_and_I(test_id, debug_mode, output);
+    // test_sl(test_id, debug_mode, output);
+    // test_muldiv(test_id, debug_mode, output);
+    // test_branch(test_id, debug_mode, output);
     test_link_fwd(test_id, debug_mode, output);
 }
 
@@ -53,7 +53,7 @@ void test_jr(int& test_id, bool debug_mode, ofstream& output){
     }
     // allocate memory for OUTPUT BUFFER --> can it be inferred at runtime? (or hardcoded?)
     vector<char> instr_bytes;
-    
+
     /////FILL BUFFER/////
     //ORI $v0 $v0 0x3631
     populate_vector(instr_bytes, "00110100010000100011011000110001");
@@ -99,7 +99,7 @@ void test_put_char(int& test_id, bool debug_mode, ofstream& output){
     }
     // allocate memory for OUTPUT BUFFER --> can it be inferred at runtime? (or hardcoded?)
     vector<char> instr_bytes;
-    
+
     /////FILL BUFFER/////
     //ORI $s2 $s2 0x3631
     populate_vector(instr_bytes, "00110110010100100011011000110001");
@@ -155,7 +155,7 @@ void test_link_fwd(int& test_id, bool debug_mode, ofstream& output){
         exit(EXIT_FAILURE);
     }
     //load instructions in the format instr | name | input1 | input2 | expected_result (1 = branch, 2= no branch) | expected_exit_code
-    //instr must have the offset set to 
+    //instr must have the offset set to
     string instr, instr_name;
     int input1, input2, expected_result, expected_exit;
     while (instructions >> instr >> instr_name >> input1 >> input2 >> expected_result >> expected_exit) {
@@ -176,7 +176,7 @@ void test_link_fwd(int& test_id, bool debug_mode, ofstream& output){
         }
         // allocate memory for OUTPUT BUFFER --> can it be inferred at runtime? (or hardcoded?)
         vector<char> instr_bytes;
-        
+
         /////FILL BUFFER/////
         //lui s1 - 16 most significant bits of input 1
         populate_vector(instr_bytes, "0011110000010001" + input1_binary.substr(0, 16));
@@ -204,7 +204,7 @@ void test_link_fwd(int& test_id, bool debug_mode, ofstream& output){
         delete[] buffer;
         outfile.close();
         ////////////////////////////////////////////////////////
-        
+
         int32_t result=0, exit_code=0;
         get_simulator_output(debug_mode, result, exit_code);
 
@@ -224,76 +224,6 @@ void test_link_fwd(int& test_id, bool debug_mode, ofstream& output){
     }
     instructions.close();
 }
-
-// void test_link_back(int& test_id, bool debug_mode, ofstream& output){
-//     ofstream binary;
-//     ifstream instructions;
-//     string instructions_name = "test/link_back_instructions.txt";
-//     instructions.open(instructions_name.c_str());
-//     if (!instructions.is_open()) {
-//         cout << "link_back_instructions.txt file not found" << endl;
-//         exit(EXIT_FAILURE);
-//     }
-//     //load instructions in the format instr | name | input1 | input2 | expected_result (1 = branch, 2= no branch)
-//     //instr must have the offset set to 
-//     string instr, instr_name;
-//     int input1, input2, expected_result;
-//     while (instructions >> instr >> instr_name >> input1 >> input2 >> expected_result) {
-
-//         string binary_name = "test/temp/binary.bin";
-//         binary.open(binary_name.c_str());
-//         if (!binary.is_open()) {
-//             cout << "binary file could not be created" << endl;
-//             exit(EXIT_FAILURE);
-//         }
-//         //convert input as int to binary string
-//         string input1_binary = int_to_bin(input1);
-//         string input2_binary = int_to_bin(input2);
-        
-//         stringstream ss;
-//         //lui s1 - 16 most significant bits of input 1
-//         populate_vector(instr_bytes, "0011110000010001" << input1_binary.substr(0, 16) << endl;
-//         //ori s1 s1 - 16 least significant bits of input 1
-//         populate_vector(instr_bytes, "0011011000110001" << input1_binary.substr(16, 32) << endl;
-//         //Beq $zero $zero 0x3
-//         populate_vector(instr_bytes, "00010000000000000000000000000011" << endl;
-//         //addi $s3 $s3 0x0
-//         populate_vector(instr_bytes, "00100010011100110000000000000000" << endl;
-//         //addi $v0 $v0 0x1
-//         populate_vector(instr_bytes, "00100000010000100000000000000001" << endl;
-//         //jr $ra
-//         populate_vector(instr_bytes, "00000011111000000000000000001000" << endl;
-//         //instruction to test
-//         populate_vector(instr_bytes, instr << endl;
-//         //addi $v0 $v0 0x1
-//         populate_vector(instr_bytes, "00100000010000100000000000000001" << endl;
-//         //addi $v0 $v0 0x1
-//         populate_vector(instr_bytes, "00100000010000100000000000000001" << endl;
-//         //jr $zero
-//         populate_vector(instr_bytes, "00000000000000000000000000001000";
-//         binary << ss.str();
-//         binary.close();
-        
-
-            // int32_t result=0, exit_code=0;
-            // get_simulator_output(debug_mode, result, exit_code);
-
-//         string status = "Fail";
-//         stringstream message;
-//         message << ",[ " << input1 << " " << instr_name << " " << input2 << " expected the branch to";
-//         if (expected_result == 2) {
-//             message << " not";
-//         }
-//         message << " execute] " << result;
-//         if ((expected_result == 2 && result == 2) || (expected_result == 1 && result == 3)) {
-//             status = "Pass";
-//         }
-
-//         cout << test_id << ", " << instr_name << ", " << status << ", Alelo " << message.str() << endl;
-//         output << test_id++ << ", " << instr_name << ", " << status << ", Alelo " << message.str() << endl;
-//     }
-//     instructions.close();
-// }
 
 void test_branch(int& test_id, bool debug_mode, ofstream& output){
     ofstream binary;
@@ -326,7 +256,7 @@ void test_branch(int& test_id, bool debug_mode, ofstream& output){
         }
         // allocate memory for OUTPUT BUFFER --> can it be inferred at runtime? (or hardcoded?)
         vector<char> instr_bytes;
-        
+
         /////FILL BUFFER/////
         //lui s1 - 16 most significant bits of input 1
         populate_vector(instr_bytes, "0011110000010001" + input1_binary.substr(0, 16));
@@ -354,7 +284,7 @@ void test_branch(int& test_id, bool debug_mode, ofstream& output){
         delete[] buffer;
         outfile.close();
         ////////////////////////////////////////////////////////
-       
+
         int32_t result=0, exit_code=0;
         get_simulator_output(debug_mode, result, exit_code);
 
@@ -364,7 +294,7 @@ void test_branch(int& test_id, bool debug_mode, ofstream& output){
         << result << "| Expected exit_code: " << expected_exit << " exit: " << exit_code;
         if (instr_name == "beq") {
             message << "| IF THIS INSTRUCTION FAILS, ALL BACKWARD BRANCHES WILL FAIL";
-        } 
+        }
         message << "]";
         if (result == expected_result && exit_code == expected_exit) {
             status = "Pass";
@@ -372,7 +302,7 @@ void test_branch(int& test_id, bool debug_mode, ofstream& output){
 
         cout << test_id << ", " << instr_name << ", " << status << ", Alelo " << message.str() << endl;
         output << test_id++ << ", " << instr_name << ", " << status << ", Alelo " << message.str() << endl;
-        
+
         ///////////////////WRITE TO BINARY FILE/////////////////
         //open output file in binary mode
         ofstream outfile2 ("test/temp/binary.bin", ofstream::binary);
@@ -386,9 +316,9 @@ void test_branch(int& test_id, bool debug_mode, ofstream& output){
         }
         // allocate memory for OUTPUT BUFFER --> can it be inferred at runtime? (or hardcoded?)
         instr_bytes.clear();
-        
+
         /////FILL BUFFER/////
-        
+
         //lui s1 - 16 most significant bits of input 1
         populate_vector(instr_bytes, "0011110000010001" + input1_binary.substr(0, 16));
         //ori s1 s1 - 16 least significant bits of input 1
@@ -408,7 +338,7 @@ void test_branch(int& test_id, bool debug_mode, ofstream& output){
         populate_vector(instr_bytes, "00100010010100100000000000000001");
         //addi $s2 $s2 0x1
         populate_vector(instr_bytes, "00100010010100100000000000000001");
-        
+
         s2_to_output(instr_bytes);
 
         char* buffer2 = new char[instr_bytes.size()];
@@ -420,7 +350,7 @@ void test_branch(int& test_id, bool debug_mode, ofstream& output){
         delete[] buffer2;
         outfile2.close();
         ////////////////////////////////////////////////////////
-        
+
         get_simulator_output(debug_mode, result, exit_code);
 
         status = "Fail";
@@ -468,7 +398,7 @@ void test_R_and_I(int& test_id, bool debug_mode, ofstream& output){
             }
             // allocate memory for OUTPUT BUFFER --> can it be inferred at runtime? (or hardcoded?)
             vector<char> instr_bytes;
-            
+
             /////FILL BUFFER/////
             //-----------initialize registers with required values-----------
             //lui s1 - 16 most significant bits of input 1
@@ -481,9 +411,9 @@ void test_R_and_I(int& test_id, bool debug_mode, ofstream& output){
             populate_vector(instr_bytes, "0011011000010000" + input2_binary.substr(16, 32));
             //instruction to test
             populate_vector(instr_bytes, instr);
-            
+
             s2_to_output(instr_bytes);
-            
+
             char* buffer = new char[instr_bytes.size()];
             copy_vector_to_buffer(instr_bytes, buffer);
 
@@ -493,7 +423,7 @@ void test_R_and_I(int& test_id, bool debug_mode, ofstream& output){
             delete[] buffer;
             outfile.close();
             ////////////////////////////////////////////////////////
-            
+
             int32_t result=0, exit_code=0;
             get_simulator_output(debug_mode, result, exit_code);
 
@@ -508,7 +438,7 @@ void test_R_and_I(int& test_id, bool debug_mode, ofstream& output){
 
             cout << test_id << ", " << instr_name << ", " << status << ", Alelo " << message.str() << endl;
             output << test_id++ << ", " << instr_name << ", " << status << ", Alelo " << message.str() << endl;
-            
+
         }
         instructions.close();
 }
@@ -568,7 +498,7 @@ void test_sl(int& test_id, bool debug_mode, ofstream& output){
             store_address_init--;
         }
         string store_address_init_binary = int_to_bin(store_address_init);
-        
+
         ///////////////////WRITE TO BINARY FILE/////////////////
         //open output file in binary mode
         ofstream outfile ("test/temp/binary.bin", ofstream::binary);
@@ -582,7 +512,7 @@ void test_sl(int& test_id, bool debug_mode, ofstream& output){
         }
         // allocate memory for OUTPUT BUFFER --> can it be inferred at runtime? (or hardcoded?)
         vector<char> instr_bytes;
-        
+
         /////FILL BUFFER/////
         //-----------put msb of address into register accessed by store-----------
         //lui t0 16 most significant bits of address
@@ -605,7 +535,7 @@ void test_sl(int& test_id, bool debug_mode, ofstream& output){
         populate_vector(instr_bytes, "0011110000010000" + input1_binary.substr(0, 16));
         //ori s0 s0 - 16 least significant bits of input 1
         populate_vector(instr_bytes, "0011011000010000" + input1_binary.substr(16, 32));
-        
+
         //-----------test store and then load word-----------
         if (!is_store) { //if load, store a value and test load
             //lui s2 - 16 most significant bits of input 1
@@ -625,7 +555,7 @@ void test_sl(int& test_id, bool debug_mode, ofstream& output){
             //lw $s2 address (16lsb) t1 (address 16msb)
             populate_vector(instr_bytes, "1000110100110010" + load_address_binary.substr(16, 32));
         }
-        
+
         s2_to_output(instr_bytes);
 
         char* buffer = new char[instr_bytes.size()];
@@ -637,7 +567,7 @@ void test_sl(int& test_id, bool debug_mode, ofstream& output){
         delete[] buffer;
         outfile.close();
         ////////////////////////////////////////////////////////
-        
+
         int32_t result=0, exit_code=0;
         get_simulator_output(debug_mode, result, exit_code);
 
@@ -655,7 +585,7 @@ void test_sl(int& test_id, bool debug_mode, ofstream& output){
 
         cout << test_id << ", " << instr_name << ", " << status << ", Alelo " << message.str() << endl;
         output << test_id++ << ", " << instr_name << ", " << status << ", Alelo " << message.str() << endl;
-        
+
     }
     instructions.close();
 }
@@ -676,7 +606,7 @@ void test_muldiv(int& test_id, bool debug_mode, ofstream& output){
             //convert input as int to binary string
             string input1_binary = int_to_bin(input1);
             string input2_binary = int_to_bin(input2);
-            
+
             ///////////////////WRITE TO BINARY FILE/////////////////
             //open output file in binary mode
             ofstream outfile ("test/temp/binary.bin", ofstream::binary);
@@ -690,7 +620,7 @@ void test_muldiv(int& test_id, bool debug_mode, ofstream& output){
             }
             // allocate memory for OUTPUT BUFFER --> can it be inferred at runtime? (or hardcoded?)
             vector<char> instr_bytes;
-            
+
             /////FILL BUFFER/////
             //-----------initialize registers with required values-----------
             //lui s1 - 16 most significant bits of input 1
@@ -718,7 +648,7 @@ void test_muldiv(int& test_id, bool debug_mode, ofstream& output){
             delete[] buffer;
             outfile.close();
             ////////////////////////////////////////////////////////
-            
+
             int32_t result=0, exit_code=0;
             get_simulator_output(debug_mode, result, exit_code);
 
@@ -747,7 +677,7 @@ void test_muldiv(int& test_id, bool debug_mode, ofstream& output){
             }
             // allocate memory for OUTPUT BUFFER --> can it be inferred at runtime? (or hardcoded?)
             instr_bytes.clear();
-            
+
             /////FILL BUFFER/////
             //-----------initialize registers with required values-----------
             //lui s1 - 16 most significant bits of input 1
@@ -765,7 +695,7 @@ void test_muldiv(int& test_id, bool debug_mode, ofstream& output){
             populate_vector(instr_bytes, "00000000000000001001000000010010");
 
             s2_to_output(instr_bytes);
-            
+
             char* buffer2 = new char[instr_bytes.size()];
             copy_vector_to_buffer(instr_bytes, buffer2);
 
@@ -775,7 +705,7 @@ void test_muldiv(int& test_id, bool debug_mode, ofstream& output){
             delete[] buffer2;
             outfile2.close();
             ////////////////////////////////////////////////////////
-            
+
             get_simulator_output(debug_mode, result, exit_code);
 
             status = "Fail";
