@@ -31,7 +31,7 @@ int main(int argc, char* argv[])
     }
 
     test_pc_out_of_range(test_id, debug_mode, output);
-    test_jr(test_id, debug_mode, output);
+    // test_jr(test_id, debug_mode, output);
     test_put_char(test_id, debug_mode, output);
     test_R_and_I(test_id, debug_mode, output);
     test_sl(test_id, debug_mode, output);
