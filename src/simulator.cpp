@@ -12,7 +12,7 @@ using namespace std;
 bool debug_mode;
 
 int main(int argc, char* argv[]){
-	
+
 	//try-catch block for unkonwn exceptions
 	try{
 
@@ -47,7 +47,7 @@ int main(int argc, char* argv[]){
 	if (!infile.is_open()) exit(-21);
 	//else read the file and store in temporary dinamically allocated array of bytes
 	size = infile.tellg();
-	//we will use this version 
+	//we will use this version
 	memblock = new char [size]; //memblock will be used by load instructions to read from the instr. memory space
 	infile.seekg (0, ios::beg);
 	infile.read (memblock, size);
@@ -86,15 +86,15 @@ int main(int argc, char* argv[]){
 		//from pc & pc_next understand what instruction has been executed
 		if (pc_next == 0){ //because jr sets pc_next to zero
 			execute(instructions, data, registers, ++pc, pc_next, HiLo, instr_bytes);
-			break;  
+			break;
 		}
-		//if 'non-pc-related' instruction has been executed 
+		//if 'non-pc-related' instruction has been executed
 		else if (pc_next == pc + 1){
 			//update pc & pc_next as usual
 			pc++;
 			pc_next++;
 			if (pc > instructions.size()) exit(-11);
-		}				
+		}
 		//if branch/jump has been executed
 		else{
 			if (debug_mode) cout << "entered pc update" << pc << endl;
@@ -140,7 +140,7 @@ void execute(vector <uint32_t> &instructions, uint8_t* data, int32_t (&registers
 	//check if R type
 	if (opcode == 0){
 		//execute
-		execute_R(instr, data, registers, pc, pc_next, HiLo);
+		execute_R(instr, registers, pc_next, HiLo);
 	}
 	//check if J type
 	else if (opcode == 2 || opcode == 3){
@@ -148,14 +148,14 @@ void execute(vector <uint32_t> &instructions, uint8_t* data, int32_t (&registers
 		execute_J(instr, registers, opcode, pc, pc_next);
 	}
 	//further decode and (eventually) execute
-	else execute_I(instr, data, registers, opcode, pc, pc_next, instr_bytes);
+	else execute_I(instr, data, registers, opcode, pc_next, instr_bytes);
 }
 
 void execute_J(uint32_t instr, int32_t (&registers)[32], uint8_t& opcode, uint32_t& pc, uint32_t& pc_next) {
 	uint32_t instr_index = (instr << 6) >> 6;
-	
+
 	//Jump (J)
-	if (opcode == 2){ 
+	if (opcode == 2){
 		j(instr_index, pc, pc_next);
 	}
 	//Jump and Link (JAL)
@@ -166,7 +166,7 @@ void execute_J(uint32_t instr, int32_t (&registers)[32], uint8_t& opcode, uint32
 	else exit(-12);
 }
 
-void execute_R(uint32_t instr, uint8_t* data, int32_t (&registers)[32], uint32_t& pc, uint32_t& pc_next, int32_t (&HiLo)[2]) {
+void execute_R(uint32_t instr, int32_t (&registers)[32], uint32_t& pc_next, int32_t (&HiLo)[2]) {
 	//decode relevant operation from function code(LS 5 bits)
 	uint32_t funct_code = (instr << 26) >> 26;
 	uint32_t dest_reg, op1, op2, shift_amt;
@@ -193,10 +193,10 @@ void execute_R(uint32_t instr, uint8_t* data, int32_t (&registers)[32], uint32_t
 			 	srav(dest_reg, op1, op2, registers);
 			 	break;
 			case 8:		// jr 	rs 			001000
-			 	jr(op1, registers, pc, pc_next);
+			 	jr(op1, registers, pc_next);
 			 	break;
 			case 9:		// jalr rd, rs 		001001
-			 	jalr(op1, dest_reg, registers, pc, pc_next);
+			 	jalr(op1, dest_reg, registers, pc_next);
 			 	break;
 			//invalid instruction
 			default: exit(-12);
@@ -231,7 +231,7 @@ void execute_R(uint32_t instr, uint8_t* data, int32_t (&registers)[32], uint32_t
 			 	divu(op1, op2, registers, HiLo);
 			 	break;
 			//invalid instruction
-			default: exit(-12);				 
+			default: exit(-12);
 		}
 	}
 
@@ -269,12 +269,12 @@ void execute_R(uint32_t instr, uint8_t* data, int32_t (&registers)[32], uint32_t
 			 	sltu(dest_reg, op1, op2, registers);
 			 	break;
 			//invalid instruction
-			default: exit(-12);				 
+			default: exit(-12);
 		}
 	}
 }
 
-void execute_I (uint32_t instr, uint8_t* data, int32_t (&registers)[32], uint8_t &opcode, uint32_t& pc, uint32_t& pc_next, uint8_t* instr_bytes){
+void execute_I (uint32_t instr, uint8_t* data, int32_t (&registers)[32], uint8_t &opcode, uint32_t& pc_next, uint8_t* instr_bytes){
 	uint32_t dest_reg, src_reg;
 	int32_t immediate;
 	decode_fields_I(dest_reg, src_reg, immediate, instr);
@@ -283,46 +283,46 @@ void execute_I (uint32_t instr, uint8_t* data, int32_t (&registers)[32], uint8_t
 	if (opcode < 0x10){
 		switch(opcode){
 			case 1:		// CORNER CASE --> MULTIPLE POSSIBILITY
-			 	// bltz 	rs, label 	000001 		
-				if (dest_reg == 0) bltz(src_reg, immediate, registers, pc, pc_next);
+			 	// bltz 	rs, label 	000001
+				if (dest_reg == 0) bltz(src_reg, immediate, registers, pc_next);
 			 	// bgez 	rs, label 	000001
-				else if (dest_reg == 1) bgez (src_reg, immediate, registers, pc, pc_next);
+				else if (dest_reg == 1) bgez (src_reg, immediate, registers, pc_next);
 				// bltzal	re, label	000001
-				else if (dest_reg == 16) bltzal(src_reg, immediate, registers, pc, pc_next);
+				else if (dest_reg == 16) bltzal(src_reg, immediate, registers, pc_next);
 				// bgezal	rs, ladel	000001
-				else if (dest_reg == 17) bgezal(src_reg, immediate, registers, pc, pc_next);
+				else if (dest_reg == 17) bgezal(src_reg, immediate, registers, pc_next);
 			 	break;
-			case 4:		// beq	rs, rt, label 		000100 
-			 	beq(src_reg, dest_reg, immediate, registers, pc, pc_next);
+			case 4:		// beq	rs, rt, label 		000100
+			 	beq(src_reg, dest_reg, immediate, registers, pc_next);
 			 	break;
 			case 5:		// bne 	rs, rt, label 		000101
-			 	bne(src_reg, dest_reg, immediate, registers, pc, pc_next);
+			 	bne(src_reg, dest_reg, immediate, registers, pc_next);
 			 	break;
-			case 6:		// blez 	rs, label 		000110 
-			 	blez(src_reg, immediate, registers, pc, pc_next);
+			case 6:		// blez 	rs, label 		000110
+			 	blez(src_reg, immediate, registers, pc_next);
 			 	break;
 			case 7:		// bgtz 	rs, label 		000111
-			 	bgtz(src_reg, immediate, registers, pc, pc_next);
+			 	bgtz(src_reg, immediate, registers, pc_next);
 			 	break;
-			case 8:		// addi 	rt, rs, imm 		001000 
+			case 8:		// addi 	rt, rs, imm 		001000
 				addi(dest_reg, src_reg, immediate, registers);
 				break;
 			case 9:		// addiu 	rt, rs, imm 		001001
-				addiu(dest_reg, src_reg, immediate, registers); 
+				addiu(dest_reg, src_reg, immediate, registers);
 				break;
-			case 10:	// slti 	rt, rs, imm 		001010 
+			case 10:	// slti 	rt, rs, imm 		001010
 			 	slti(dest_reg, src_reg, immediate, registers);
 			 	break;
 			case 11:	// sltiu 	rt, rs, imm 		001011
 			 	sltiu(dest_reg, src_reg, immediate, registers);
 			 	break;
 			case 12:	// andi 	rt, rs, imm 		001100
-			 	andi(dest_reg, src_reg, immediate, registers); 
+			 	andi(dest_reg, src_reg, immediate, registers);
 			 	break;
 			case 13:	// ori 	rt, rs, imm 			001101
 			 	ori(dest_reg, src_reg, immediate, registers);
 			 	break;
-			case 14:	// xori 	rt, rs, imm 		001110 
+			case 14:	// xori 	rt, rs, imm 		001110
 			 	xori(dest_reg, src_reg, immediate, registers);
 			 	break;
 			case 15:	// lui 		rt, imm 			001111
@@ -351,10 +351,10 @@ void execute_I (uint32_t instr, uint8_t* data, int32_t (&registers)[32], uint8_t
 			case 36:	//lbu 	rt, imm(rs) 	100100
 			 	lbu(registers[src_reg] + immediate, data, dest_reg, registers, instr_bytes);
 			 	break;
-			case 37:	//lhu 	rt, imm(rs) 	100101 
+			case 37:	//lhu 	rt, imm(rs) 	100101
 			 	lhu(registers[src_reg] + immediate, data, dest_reg, registers, instr_bytes);
 			 	break;
-			case 38:	//lwr 	rt, imm(rs) 	100110 
+			case 38:	//lwr 	rt, imm(rs) 	100110
 			 	lwr(registers[src_reg] + immediate, data, dest_reg, registers, instr_bytes);
 			 	break;
 			case 40:	//sb 	rt, imm(rs) 	101000
@@ -423,18 +423,18 @@ void srav(uint32_t dest_reg, uint32_t op1, uint32_t op2, int32_t (&registers)[32
 	//if num is positive, operation is same as srl
 	if (num >= 0) registers[dest_reg] = num >> shift_amt;
 	//else duplicate sign bit
-	else registers[dest_reg] = (num >> shift_amt) | (0xFFFFFFFF << 32 - 1);
+	else registers[dest_reg] = (num >> shift_amt) | (0xFFFFFFFF << (32 - shift_amt));
 }
 
-void jr(uint32_t src_reg, int32_t (&registers)[32], uint32_t& pc, uint32_t& pc_next){
+void jr(uint32_t src_reg, int32_t (&registers)[32], uint32_t& pc_next){
 	pc_next = registers[src_reg];
 }
 
-void jalr(uint32_t src_reg, uint32_t dest_reg, int32_t (&registers)[32], uint32_t& pc, uint32_t& pc_next){
+void jalr(uint32_t src_reg, uint32_t dest_reg, int32_t (&registers)[32], uint32_t& pc_next){
 	//save return address
-	registers[dest_reg] = pc + 2;
+	registers[dest_reg] = pc_next+1;
 	//execute jr
-	jr(src_reg, registers, pc, pc_next);
+	jr(src_reg, registers, pc_next);
 }
 
 void mfhi(uint32_t dest_reg, int32_t (&registers)[32], int32_t HI){
@@ -553,34 +553,34 @@ void sltu(uint32_t dest_reg, uint32_t op1, uint32_t op2, int32_t (&registers)[32
 
 //////I TYPE INSTRUCTIONS///////
 
-void bltz(uint32_t &op, int32_t &immediate, int32_t (&registers)[32], uint32_t& pc, uint32_t& pc_next){
+void bltz(uint32_t &op, int32_t &immediate, int32_t (&registers)[32], uint32_t& pc_next){
 	if (debug_mode) cout << "registers[op]" << registers[op] << endl;;
 	if (registers[op] < 0){
 		pc_next += immediate;
 	}
 }
 
-void bgez(uint32_t &op, int32_t &immediate, int32_t (&registers)[32], uint32_t& pc, uint32_t& pc_next){
+void bgez(uint32_t &op, int32_t &immediate, int32_t (&registers)[32], uint32_t& pc_next){
 	if (registers[op] >= 0){
 		pc_next += immediate;
 	}
 }
 
-void bltzal(uint32_t &op, int32_t &immediate, int32_t (&registers)[32], uint32_t& pc, uint32_t& pc_next){
+void bltzal(uint32_t &op, int32_t &immediate, int32_t (&registers)[32], uint32_t& pc_next){
 	if (registers[op] < 0){
-		registers[31] = pc + 2;
+		registers[31] = pc_next + 1;
 		pc_next += immediate;
 	}
 }
 
-void bgezal(uint32_t &op, int32_t &immediate, int32_t (&registers)[32], uint32_t& pc, uint32_t& pc_next){
+void bgezal(uint32_t &op, int32_t &immediate, int32_t (&registers)[32], uint32_t& pc_next){
 	if (registers[op] >= 0){
-		registers[31] = pc + 2;
+		registers[31] = pc_next + 1;
 		pc_next += immediate;
 	}
 }
 
-void beq(uint32_t &op1, uint32_t &op2, int32_t &immediate, int32_t (&registers)[32], uint32_t& pc, uint32_t& pc_next){
+void beq(uint32_t &op1, uint32_t &op2, int32_t &immediate, int32_t (&registers)[32], uint32_t& pc_next){
 	if (debug_mode) cout << "immediate: " << immediate << endl;
 	if (debug_mode) cout << "registers[op1]: " << registers[op1] << "registers[op2]: " << registers[op2] << immediate << endl;
 	if (registers[op1] == registers[op2]){
@@ -590,20 +590,20 @@ void beq(uint32_t &op1, uint32_t &op2, int32_t &immediate, int32_t (&registers)[
 	if (debug_mode) cout << "pc_next: " << pc_next << endl;
 }
 
-void bne(uint32_t &op1, uint32_t &op2, int32_t &immediate, int32_t (&registers)[32], uint32_t& pc, uint32_t& pc_next){
+void bne(uint32_t &op1, uint32_t &op2, int32_t &immediate, int32_t (&registers)[32], uint32_t& pc_next){
 	if (debug_mode) cout << "registers[op1]: " << registers[op1] << "registers[op2]: " << registers[op2] << immediate << endl;
 	if (registers[op1] != registers[op2]){
 		pc_next += immediate;
 	}
 }
 
-void blez(uint32_t &op, int32_t &immediate, int32_t (&registers)[32],  uint32_t& pc, uint32_t& pc_next){
+void blez(uint32_t &op, int32_t &immediate, int32_t (&registers)[32], uint32_t& pc_next){
 	if (registers[op] <= 0){
 		pc_next += immediate;
 	}
 }
 
-void bgtz(uint32_t &op, int32_t &immediate, int32_t (&registers)[32], uint32_t& pc, uint32_t& pc_next){
+void bgtz(uint32_t &op, int32_t &immediate, int32_t (&registers)[32], uint32_t& pc_next){
 	if (registers[op] > 0){
 		pc_next += immediate;
 	}
@@ -717,7 +717,7 @@ void lh(uint32_t address, uint8_t* data, uint32_t dest_reg, int32_t (&registers)
 	else exit(-11);
 
 }
-	
+
 void lwl(uint32_t address, uint8_t* data, uint32_t dest_reg, int32_t (&registers)[32], uint8_t* instr_bytes){
 	//check if mem to be accessed is between correct bounds for data space or instructions space
 	if (!(address >= ADDR_DATA && address < ADDR_DATA + DATA_SIZE) && !(address >= ADDR_INSTR && address < ADDR_INSTR + INSTR_SIZE)) exit(-11);
@@ -735,7 +735,7 @@ void lwl(uint32_t address, uint8_t* data, uint32_t dest_reg, int32_t (&registers
 		uint32_t temp = 0x0;
 		uint32_t past_val = registers[dest_reg];
 		past_val = (past_val << (8 * unalignment)) >> (8 * unalignment);
-		for(int x = 0; x < unalignment; x++){
+		for(uint32_t x = 0; x < unalignment; x++){
 			temp = temp | ((uint32_t)data[address + x] << (8 * (3-x)));
 		}
 		registers[dest_reg] = past_val | temp;
@@ -748,14 +748,14 @@ void lwl(uint32_t address, uint8_t* data, uint32_t dest_reg, int32_t (&registers
 		uint32_t temp = 0x0;
 		uint32_t past_val = registers[dest_reg];
 		past_val = (past_val << (8 * unalignment)) >> (8 * unalignment);
-		for(int x = 0; x < unalignment; x++){
+		for(uint32_t x = 0; x < unalignment; x++){
 			temp = temp | ((uint32_t)instr_bytes[address + x] << (8 * (3-x)));
 		}
 		registers[dest_reg] = past_val | temp;
 		return;
 	}
 	exit(-11);
-	
+
 }
 
 void lw(uint32_t address, uint8_t* data, uint32_t dest_reg, int32_t (&registers)[32], uint8_t* instr_bytes){
@@ -788,7 +788,7 @@ void lw(uint32_t address, uint8_t* data, uint32_t dest_reg, int32_t (&registers)
 			if (debug_mode) cout << "address +" << x << ": " << (uint32_t)instr_bytes[address + x] << endl;
 			if (debug_mode) cout << "registers[dest_reg] value: " << registers[dest_reg] << endl;
 			registers[dest_reg] = registers[dest_reg] | ((uint32_t)instr_bytes[address + x] << (8 * (3 - x)));
-		}		
+		}
 	}
 	//else check if instruction is trying to read ADDR_GETC location
 	else if (address == 0x30000000){
@@ -812,7 +812,7 @@ void lbu(uint32_t address, uint8_t* data, uint32_t dest_reg, int32_t (&registers
 	else if (address >= ADDR_INSTR && address < ADDR_INSTR + INSTR_SIZE){
 		//remove data offset and read
 		uint32_t temp = instr_bytes[address - ADDR_INSTR];
-		registers[dest_reg] = temp & 0x000000FF;		
+		registers[dest_reg] = temp & 0x000000FF;
 	}
 	//else check if instruction is trying to read ADDR_GETC location
 	else if (address == 0x30000003){
@@ -847,7 +847,7 @@ void lhu(uint32_t address, uint8_t* data, uint32_t dest_reg, int32_t (&registers
 		int32_t temp = 0 | ((uint32_t)instr_bytes[address] << 8);
 		//load lower byte
 		temp = temp | (uint32_t)(instr_bytes[address + 1]);
-		registers[dest_reg] = temp & 0x0000FFFF;		
+		registers[dest_reg] = temp & 0x0000FFFF;
 	}
 	//else check if instruction is trying to read ADDR_GETC location
 	else if (address == 0x30000002){
@@ -863,7 +863,7 @@ void lhu(uint32_t address, uint8_t* data, uint32_t dest_reg, int32_t (&registers
 
 }
 
-void lwr(int32_t address, uint8_t* data, uint32_t dest_reg, int32_t (&registers)[32], uint8_t* instr_bytes){
+void lwr(uint32_t address, uint8_t* data, uint32_t dest_reg, int32_t (&registers)[32], uint8_t* instr_bytes){
 	//check if mem to be accessed is between correct bounds for data space or instructions space
 	if (!(address >= ADDR_DATA && address < ADDR_DATA + DATA_SIZE) && !(address >= ADDR_INSTR && address < ADDR_INSTR + INSTR_SIZE)) exit(-11);
 	//infer unalignment from address
@@ -880,8 +880,9 @@ void lwr(int32_t address, uint8_t* data, uint32_t dest_reg, int32_t (&registers)
 		//load unaligned data
 		uint32_t temp = 0x0;
 		uint32_t past_val = registers[dest_reg];
-		past_val = (past_val >> (8 * ++unalignment)) << (8 * unalignment);
-		for(int x = 0; x <= unalignment; x++){
+		++unalignment;
+		past_val = (past_val >> (8 * unalignment)) << (8 * unalignment);
+		for(uint32_t x = 0; x <= unalignment; x++){
 			temp = temp | ((uint32_t)data[address - x] << (8 * x));
 		}
 		registers[dest_reg] = past_val | temp;
@@ -893,11 +894,12 @@ void lwr(int32_t address, uint8_t* data, uint32_t dest_reg, int32_t (&registers)
 		//load unaligned data
 		uint32_t temp = 0x0;
 		uint32_t past_val = registers[dest_reg];
-		past_val = (past_val >> (8 * ++unalignment)) << (8 * unalignment);
-		for(int x = 0; x <= unalignment; x++){
+		++unalignment;
+		past_val = (past_val >> (8 * unalignment)) << (8 * unalignment);
+		for(uint32_t x = 0; x <= unalignment; x++){
 			temp = temp | ((uint32_t)instr_bytes[address - x] << (8 * x));
 		}
-		registers[dest_reg] = past_val | temp;		
+		registers[dest_reg] = past_val | temp;
 	}
 }
 
@@ -947,7 +949,7 @@ void j(uint32_t& instr_index, uint32_t& pc, uint32_t& pc_next){
 void jal(uint32_t& instr_index, int32_t (&registers)[32], uint32_t& pc, uint32_t& pc_next){
 	if (debug_mode) cout << "entered jal" << endl;
 	//link return address in register 31
-	registers[31]  = pc + 2;
+	registers[31]  = pc_next+1;
 	//execute normal j
 	j (instr_index, pc, pc_next);
 }
